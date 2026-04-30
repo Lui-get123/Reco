@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="mint_primary">#FF8CD4C4</color>
+    <color name="mint_light">#FFD4F0EA</color>
+    <color name="lavender_primary">#FFCDB4DB</color>
+    <color name="lavender_light">#FFEDE3F2</color>
+    <color name="yellow_primary">#FFF5D680</color>
+    <color name="yellow_light">#FFFFF4D6</color>
+    <color name="light_background">#FFF8F9FC</color>
+    <color name="light_surface">#FFFFFFFF</color>
+    <color name="text_dark">#FF2D3142</color>
+    <color name="text_medium">#FF5A5E72</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

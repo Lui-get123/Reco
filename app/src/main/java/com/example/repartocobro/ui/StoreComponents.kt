@@ -293,7 +293,10 @@ fun StoreForm(
 
                 Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
                     Text("Total: \$$delivTotal", fontWeight = FontWeight.Bold, color = Graphite, modifier = Modifier.weight(1f))
-                    AccentButton("Guardar", { onSaveDelivered(store.id, updatedProducts) }, Modifier.weight(1f), Mustard)
+                    AccentButton("Guardar", { 
+                        onSaveDelivered(store.id, updatedProducts)
+                        onClose()
+                    }, Modifier.weight(1f), Mustard)
                 }
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -336,10 +339,18 @@ fun StoreForm(
                     Text("No cobrado: \$$notColl", fontWeight = FontWeight.Bold, color = StatusError)
                 }
                 Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp)) {
-                    AccentButton("Cobrada", { if (!isInvalid) onMarkCollected(store.id, updatedProducts, obs.ifBlank { null }) },
-                        Modifier.weight(1f), Sage, enabled = !isInvalid && !isBlocked)
-                    AccentButton("Deuda", { if (!isInvalid) onMarkPendingPayment(store.id, updatedProducts, obs.ifBlank { null }) },
-                        Modifier.weight(1f), StatusWarning, enabled = !isInvalid && !isBlocked && collTotal > 0)
+                    AccentButton("Cobrada", { 
+                        if (!isInvalid) {
+                            onMarkCollected(store.id, updatedProducts, obs.ifBlank { null })
+                            onClose()
+                        }
+                    }, Modifier.weight(1f), Sage, enabled = !isInvalid && !isBlocked)
+                    AccentButton("Deuda", { 
+                        if (!isInvalid) {
+                            onMarkPendingPayment(store.id, updatedProducts, obs.ifBlank { null })
+                            onClose()
+                        }
+                    }, Modifier.weight(1f), StatusWarning, enabled = !isInvalid && !isBlocked && collTotal > 0)
                 }
             }
         }

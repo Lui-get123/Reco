@@ -16,25 +16,36 @@ import com.example.repartocobro.viewmodel.AppUiState
 fun AppScreen(
     state: AppUiState, onLogin: (Int) -> Unit, onLogout: () -> Unit,
     onSelectStore: (Int) -> Unit, onCloseStoreForm: () -> Unit,
-    onSaveDelivered: (Int, Int, Int) -> Unit,
-    onSaveAllDelivered: (Map<Int, Pair<Int, Int>>) -> Unit,
-    onSaveSales: (Int, Int, Int) -> Unit, onMarkCollected: (Int, Int, Int, String?) -> Unit,
-    onMarkPendingPayment: (Int, Int, Int, String?) -> Unit,
+    onSaveDelivered: (Int, List<com.example.repartocobro.model.StoreProduct>) -> Unit,
+    onSaveAllDelivered: (Map<Int, List<com.example.repartocobro.model.StoreProduct>>) -> Unit,
+    onMarkCollected: (Int, List<com.example.repartocobro.model.StoreProduct>, String?) -> Unit,
+    onMarkPendingPayment: (Int, List<com.example.repartocobro.model.StoreProduct>, String?) -> Unit,
     onCollectDebt: (Int) -> Unit,
     onResetRoute: () -> Unit, onExportPdf: () -> Unit,
     onDismissMessage: () -> Unit,
     onRedeemCode: (String) -> Unit, onToggleLicenseDialog: () -> Unit,
-    onAcceptTerms: () -> Unit = {}
+    onAcceptTerms: () -> Unit = {},
+    // Admin CRUD
+    onAddProduct: (String, Int) -> Unit = { _, _ -> },
+    onDeleteProduct: (Int) -> Unit = {},
+    onAddRoute: (String, Int) -> Unit = { _, _ -> },
+    onDeleteRoute: (Int) -> Unit = {},
+    onAddStore: (String, Int) -> Unit = { _, _ -> },
+    onDeleteStore: (Int) -> Unit = {}
 ) {
+    var showAdminScreen by remember { mutableStateOf(false) }
+
     Scaffold(containerColor = LightBackground) { pad ->
         Box(Modifier.padding(pad).fillMaxSize()) {
             if (!state.licenseStatus.isActive) {
                 LicenseLockScreen(state.licenseStatus, state.isValidatingLicense, onRedeemCode)
+            } else if (showAdminScreen) {
+                AdminScreen(state, onClose = { showAdminScreen = false }, onAddProduct, onDeleteProduct, onAddRoute, onDeleteRoute, onAddStore, onDeleteStore)
             } else if (state.selectedCollector == null) {
-                LoginContent(state, onLogin, onToggleLicenseDialog, onAcceptTerms)
+                LoginContent(state, onLogin, onOpenAdmin = { showAdminScreen = true }, onToggleLicenseDialog, onAcceptTerms)
             } else {
                 RouteContent(state, onSelectStore, onCloseStoreForm, onSaveDelivered,
-                    onSaveAllDelivered, onSaveSales, onMarkCollected, onMarkPendingPayment,
+                    onSaveAllDelivered, onMarkCollected, onMarkPendingPayment,
                     onCollectDebt, onResetRoute,
                     onExportPdf, onToggleLicenseDialog, onLogout)
             }

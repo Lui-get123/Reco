@@ -47,10 +47,10 @@ import com.example.repartocobro.viewmodel.DriveUploadState
 @Composable
 fun RouteContent(
     state: AppUiState, onSelectStore: (Int) -> Unit, onCloseStoreForm: () -> Unit,
-    onSaveDelivered: (Int, Int, Int) -> Unit, onSaveAllDelivered: (Map<Int, Pair<Int, Int>>) -> Unit,
-    onSaveSales: (Int, Int, Int) -> Unit,
-    onMarkCollected: (Int, Int, Int, String?) -> Unit,
-    onMarkPendingPayment: (Int, Int, Int, String?) -> Unit,
+    onSaveDelivered: (Int, List<com.example.repartocobro.model.StoreProduct>) -> Unit, 
+    onSaveAllDelivered: (Map<Int, List<com.example.repartocobro.model.StoreProduct>>) -> Unit,
+    onMarkCollected: (Int, List<com.example.repartocobro.model.StoreProduct>, String?) -> Unit,
+    onMarkPendingPayment: (Int, List<com.example.repartocobro.model.StoreProduct>, String?) -> Unit,
     onCollectDebt: (Int) -> Unit,
     onResetRoute: () -> Unit,
     onExportPdf: () -> Unit, onExtendLicense: () -> Unit,
@@ -59,7 +59,7 @@ fun RouteContent(
     var currentTab by remember { mutableStateOf(BottomTab.REPARTO) }
     val selectedStore = state.stores.firstOrNull { it.id == state.selectedStoreId }
 
-    val editedDeliveries = remember { mutableStateMapOf<Int, Pair<Int, Int>>() }
+    val editedDeliveries = remember { mutableStateMapOf<Int, Map<Int, Int>>() }
 
     var showResetConfirmation by remember { mutableStateOf(false) }
 

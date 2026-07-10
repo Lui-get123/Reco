@@ -47,6 +47,9 @@ data class AppUiState(
     val hasAcceptedTerms: Boolean = false,
     val lastPdfUri: String? = null,
     val isDataStale: Boolean = false,
+    val allProducts: List<com.example.repartocobro.model.Product> = emptyList(),
+    val allRoutes: List<com.example.repartocobro.model.Route> = emptyList(),
+    val allStoresAdmin: List<com.example.repartocobro.model.Store> = emptyList(),
     // Google Drive
     val driveUploadState: DriveUploadState = DriveUploadState.IDLE,
     val needsGoogleSignIn: Boolean = false,
@@ -67,9 +70,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val pdfExporter = PdfExporter()
     val driveRepository = GoogleDriveRepository(application)
 
-    // Almacena temporalmente un PDF pendiente de subir tras el Sign-In
     private var pendingDriveUpload: PdfExportResult? = null
-
     private val prefs = application.getSharedPreferences("reco_prefs", Context.MODE_PRIVATE)
 
     private val _uiState = MutableStateFlow(AppUiState())
@@ -82,10 +83,78 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 loadCollectors()
                 loadTermsAcceptance()
                 loadLastPdfUri()
+                loadAdminData()
             }
         }
-        // Verificar estado de Drive al inicio
         _uiState.update { it.copy(isDriveSignedIn = driveRepository.isSignedIn()) }
+    }
+
+    // --- Admin Data & CRUD ---
+    fun loadAdminData() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val products = repository.getProducts()
+            // To get all routes, we need a method in repo. We can get them by iterating collectors or add a method.
+            // Since we have collectors, let's just get routes for them.
+            val cols = repository.getCollectors()
+            val routes = cols.mapNotNull { repository.getRouteByCollector(it.id) }
+            val stores = routes.flatMap { repository.getStoresByRoute(it.id) }
+            
+            _uiState.update { 
+                it.copy(
+                    allProducts = products,
+                    allRoutes = routes,
+                    allStoresAdmin = stores
+                ) 
+            }
+        }
+    }
+
+    fun addProduct(name: String, price: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.addProduct(name, price, "inventory_2")
+            loadAdminData()
+            _uiState.update { it.copy(message = "Producto agregado") }
+        }
+    }
+
+    fun deleteProduct(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteProduct(id)
+            loadAdminData()
+            _uiState.update { it.copy(message = "Producto eliminado") }
+        }
+    }
+
+    fun addRoute(name: String, collectorId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.addRoute(name, collectorId)
+            loadAdminData()
+            _uiState.update { it.copy(message = "Ruta agregada") }
+        }
+    }
+
+    fun deleteRoute(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteRoute(id)
+            loadAdminData()
+            _uiState.update { it.copy(message = "Ruta eliminada") }
+        }
+    }
+
+    fun addStore(name: String, routeId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.addStore(name, routeId)
+            loadAdminData()
+            _uiState.update { it.copy(message = "Tienda agregada") }
+        }
+    }
+
+    fun deleteStore(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteStore(id)
+            loadAdminData()
+            _uiState.update { it.copy(message = "Tienda eliminada") }
+        }
     }
 
     /* ───────────── Términos y Condiciones ───────────── */
@@ -122,16 +191,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun redeemCode(code: String) {
-        // Evitar múltiples validaciones simultáneas
         if (_uiState.value.isValidatingLicense) return
-
         _uiState.update { it.copy(isValidatingLicense = true, message = null) }
-
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 supabaseLicenseRepo.redeemCode(code)
             }
-
             when (result) {
                 is SupabaseLicenseRepository.RedeemResult.Success -> {
                     val newStatus = supabaseLicenseRepo.getLicenseStatus()
@@ -214,49 +279,21 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { it.copy(selectedStoreId = null) }
     }
 
-    fun saveSales(storeId: Int, soldEmpanadas: Int, soldDeditos: Int) {
+    fun updateStoreProducts(storeId: Int, products: List<com.example.repartocobro.model.StoreProduct>) {
         viewModelScope.launch(Dispatchers.IO) {
-            val store = _uiState.value.stores.firstOrNull { it.id == storeId } ?: return@launch
-            val safeEmpanadas = soldEmpanadas.coerceIn(0, store.deliveredEmpanadas)
-            val safeDeditos = soldDeditos.coerceIn(0, store.deliveredDeditos)
-            repository.updateStoreSales(storeId, safeEmpanadas, safeDeditos)
-            refreshStores()
-            _uiState.update { it.copy(message = "Ventas actualizadas") }
-        }
-    }
-
-    fun saveDelivered(storeId: Int, deliveredEmpanadas: Int, deliveredDeditos: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val safeEmpanadas = deliveredEmpanadas.coerceAtLeast(0)
-            val safeDeditos = deliveredDeditos.coerceAtLeast(0)
-            repository.updateStoreDelivered(storeId, safeEmpanadas, safeDeditos)
-            val currentStore = _uiState.value.stores.firstOrNull { it.id == storeId }
-            if (currentStore != null) {
-                repository.updateStoreSales(
-                    storeId = storeId,
-                    soldEmpanadas = currentStore.soldEmpanadas.coerceAtMost(safeEmpanadas),
-                    soldDeditos = currentStore.soldDeditos.coerceAtMost(safeDeditos)
-                )
+            products.forEach { sp ->
+                repository.updateStoreProduct(storeId, sp.product.id, sp.deliveredQuantity, sp.soldQuantity)
             }
             refreshStores()
-            _uiState.update { it.copy(selectedStoreId = null, message = "Cantidades actualizadas") }
+            _uiState.update { it.copy(message = "Cantidades actualizadas") }
         }
     }
 
-    fun saveAllDelivered(deliveries: Map<Int, Pair<Int, Int>>) {
+    fun saveAllDelivered(deliveries: Map<Int, List<com.example.repartocobro.model.StoreProduct>>) {
         viewModelScope.launch(Dispatchers.IO) {
-            deliveries.forEach { (storeId, quantities) ->
-                val (empanadas, deditos) = quantities
-                val safeEmpanadas = empanadas.coerceAtLeast(0)
-                val safeDeditos = deditos.coerceAtLeast(0)
-                repository.updateStoreDelivered(storeId, safeEmpanadas, safeDeditos)
-                val currentStore = _uiState.value.stores.firstOrNull { it.id == storeId }
-                if (currentStore != null) {
-                    repository.updateStoreSales(
-                        storeId = storeId,
-                        soldEmpanadas = currentStore.soldEmpanadas.coerceAtMost(safeEmpanadas),
-                        soldDeditos = currentStore.soldDeditos.coerceAtMost(safeDeditos)
-                    )
+            deliveries.forEach { (storeId, products) ->
+                products.forEach { sp ->
+                    repository.updateStoreProduct(storeId, sp.product.id, sp.deliveredQuantity, sp.soldQuantity)
                 }
             }
             refreshStores()
@@ -269,58 +306,41 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun markCollected(storeId: Int, soldEmpanadas: Int, soldDeditos: Int, observations: String?) {
+    fun markCollected(storeId: Int, products: List<com.example.repartocobro.model.StoreProduct>, observations: String?) {
         if (!_uiState.value.licenseStatus.isActive) {
             _uiState.update { it.copy(message = "Se requiere licencia activa para registrar cobros", showLicenseDialog = true) }
             return
         }
-
         viewModelScope.launch(Dispatchers.IO) {
-            val store = _uiState.value.stores.firstOrNull { it.id == storeId } ?: return@launch
-            val safeEmpanadas = soldEmpanadas.coerceIn(0, store.deliveredEmpanadas)
-            val safeDeditos = soldDeditos.coerceIn(0, store.deliveredDeditos)
-            
-            // 1. Guardar las ventas primero
-            repository.updateStoreSales(storeId, safeEmpanadas, safeDeditos)
-            
-            // 2. Marcar como cobrada (status 1) y guardar observaciones
+            products.forEach { sp ->
+                repository.updateStoreProduct(storeId, sp.product.id, sp.deliveredQuantity, sp.soldQuantity)
+            }
             val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             repository.updateStoreCollected(storeId, 1, currentDate, observations)
-            
             refreshStores()
             _uiState.update { it.copy(selectedStoreId = null, message = "Tienda marcada como cobrada") }
         }
     }
 
-    fun markAsPendingPayment(storeId: Int, soldEmpanadas: Int, soldDeditos: Int, observations: String?) {
+    fun markAsPendingPayment(storeId: Int, products: List<com.example.repartocobro.model.StoreProduct>, observations: String?) {
         if (!_uiState.value.licenseStatus.isActive) {
             _uiState.update { it.copy(message = "Se requiere licencia activa para registrar deudas", showLicenseDialog = true) }
             return
         }
-
         viewModelScope.launch(Dispatchers.IO) {
             val store = _uiState.value.stores.firstOrNull { it.id == storeId } ?: return@launch
             val route = _uiState.value.route ?: return@launch
-            val safeEmpanadas = soldEmpanadas.coerceIn(0, store.deliveredEmpanadas)
-            val safeDeditos = soldDeditos.coerceIn(0, store.deliveredDeditos)
-            
-            val amount = safeEmpanadas * com.example.repartocobro.model.EMPANADA_PRICE +
-                         safeDeditos * com.example.repartocobro.model.DEDITO_PRICE
-
-            // 1. Guardar las ventas
-            repository.updateStoreSales(storeId, safeEmpanadas, safeDeditos)
-            
-            // 2. Marcar como fiado/deuda (status 2) y guardar observaciones
+            val amount = products.sumOf { it.collectedValue }
+            products.forEach { sp ->
+                repository.updateStoreProduct(storeId, sp.product.id, sp.deliveredQuantity, sp.soldQuantity)
+            }
             val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             repository.updateStoreCollected(storeId, 2, currentDate, observations)
-            
-            // 3. Agregar la deuda pendiente a la tienda
             repository.addPendingDebt(
                 storeId = storeId,
                 amount = amount,
                 observations = observations
             )
-            
             refreshStores()
             _uiState.update { it.copy(selectedStoreId = null, message = "Deuda de \$$amount registrada") }
         }
@@ -331,13 +351,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.update { it.copy(message = "Se requiere licencia activa", showLicenseDialog = true) }
             return
         }
-
         viewModelScope.launch(Dispatchers.IO) {
             val store = _uiState.value.stores.firstOrNull { it.id == storeId } ?: return@launch
             val debtAmount = store.pendingDebtTotal
-            
             repository.markAllDebtsAsPaid(storeId)
-            
             refreshStores()
             _uiState.update { it.copy(selectedStoreId = null, message = "Deuda de \$$debtAmount cobrada exitosamente") }
         }
@@ -367,8 +384,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             result.onSuccess { pdfResult ->
                 saveLastPdfUri(pdfResult.localPath)
                 _uiState.update { it.copy(message = "PDF guardado en Descargas") }
-
-                // Subir a Google Drive
                 uploadToDrive(pdfResult)
             }
             result.onFailure {
@@ -377,15 +392,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** Sube un PDF a Google Drive. Si no hay sesión, solicita Sign-In. */
     private fun uploadToDrive(pdfResult: PdfExportResult) {
         if (!driveRepository.isSignedIn()) {
-            // Guardar PDF pendiente y solicitar Sign-In
             pendingDriveUpload = pdfResult
             _uiState.update { it.copy(needsGoogleSignIn = true) }
             return
         }
-
         _uiState.update { it.copy(driveUploadState = DriveUploadState.UPLOADING) }
         viewModelScope.launch {
             val uploadResult = withContext(Dispatchers.IO) {
@@ -407,13 +419,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
             }
-            // Resetear estado de Drive después de 3 segundos
             kotlinx.coroutines.delay(3000)
             _uiState.update { it.copy(driveUploadState = DriveUploadState.IDLE) }
         }
     }
 
-    /** Procesa el resultado del Sign-In de Google y sube el PDF pendiente. */
     fun handleGoogleSignIn(success: Boolean) {
         _uiState.update {
             it.copy(
@@ -434,9 +444,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** Retorna el Intent de Google Sign-In. */
     fun getGoogleSignInIntent(): android.content.Intent = driveRepository.getSignInIntent()
-
 
     fun clearMessage() {
         _uiState.update { it.copy(message = null) }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,11 +28,19 @@ import com.example.repartocobro.ui.theme.*
 import com.example.repartocobro.viewmodel.AppUiState
 
 @Composable
-fun LoginContent(state: AppUiState, onLogin: (Int) -> Unit, onExtend: () -> Unit, onAcceptTerms: () -> Unit) {
+fun LoginContent(state: AppUiState, onLogin: (Int) -> Unit, onOpenAdmin: () -> Unit, onExtend: () -> Unit, onAcceptTerms: () -> Unit) {
     var showTermsDialog by remember { mutableStateOf(false) }
     var termsChecked by remember { mutableStateOf(state.hasAcceptedTerms) }
 
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Bone, Cream, SkyBlueSoft, Bone)))) {
+        // Admin Button at the top right
+        IconButton(
+            onClick = onOpenAdmin,
+            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).padding(top = 24.dp)
+        ) {
+            Icon(Icons.Rounded.Settings, contentDescription = "Admin", tint = Graphite, modifier = Modifier.size(28.dp))
+        }
+
         Column(
             Modifier.fillMaxWidth().fillMaxHeight(0.55f).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

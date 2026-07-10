@@ -1,8 +1,5 @@
 package com.example.repartocobro.ui
 
-import com.example.repartocobro.model.EMPANADA_PRICE
-import com.example.repartocobro.model.DEDITO_PRICE
-
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -34,6 +31,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.repartocobro.model.Store
+import com.example.repartocobro.model.StoreProduct
 import com.example.repartocobro.ui.components.*
 import com.example.repartocobro.ui.theme.*
 import androidx.compose.ui.focus.FocusRequester
@@ -128,8 +126,11 @@ fun StoreRow(store: Store, isSelected: Boolean, tab: BottomTab, isDone: Boolean,
                                 fontWeight = if (hasDebt) FontWeight.Bold else FontWeight.Normal)
                         }
                     } else {
-                        // Modo reparto: mostrar cantidades actuales
-                        Text("Entrega: E:${store.deliveredEmpanadas}  D:${store.deliveredDeditos}",
+                        // Modo reparto: mostrar cantidades actuales dinámicamente
+                        val summary = store.products.filter { it.deliveredQuantity > 0 }
+                            .joinToString("  ") { "${it.product.name.take(1).uppercase()}:${it.deliveredQuantity}" }
+                            .ifEmpty { "Sin entregas" }
+                        Text("Entrega: $summary",
                             style = MaterialTheme.typography.bodySmall, color = GraphiteMedium)
                     }
                 }
@@ -161,25 +162,57 @@ fun StoreRow(store: Store, isSelected: Boolean, tab: BottomTab, isDone: Boolean,
 @Composable
 fun StoreForm(
     store: Store, tab: BottomTab, onClose: () -> Unit,
-    onSaveDelivered: (Int, Int, Int) -> Unit,
-    onMarkCollected: (Int, Int, Int, String?) -> Unit,
-    onMarkPendingPayment: (Int, Int, Int, String?) -> Unit = { _, _, _, _ -> },
+    onSaveDelivered: (Int, List<StoreProduct>) -> Unit,
+    onMarkCollected: (Int, List<StoreProduct>, String?) -> Unit,
+    onMarkPendingPayment: (Int, List<StoreProduct>, String?) -> Unit = { _, _, _ -> },
     onCollectDebt: (Int) -> Unit = { },
-    editedDeliveries: MutableMap<Int, Pair<Int, Int>> = mutableMapOf(),
+    editedDeliveries: MutableMap<Int, Map<Int, Int>> = mutableMapOf(),
     isBlocked: Boolean = false
 ) {
-    val currentEdited = editedDeliveries[store.id]
-    var delEmp by remember(store.id) { mutableStateOf((currentEdited?.first ?: store.deliveredEmpanadas).toString()) }
-    var delDed by remember(store.id) { mutableStateOf((currentEdited?.second ?: store.deliveredDeditos).toString()) }
-    var soldEmp by remember(store.id) { mutableStateOf(if (store.soldEmpanadas == 0) "" else store.soldEmpanadas.toString()) }
-    var soldDed by remember(store.id) { mutableStateOf(if (store.soldDeditos == 0) "" else store.soldDeditos.toString()) }
+    val currentEdited = editedDeliveries[store.id] ?: emptyMap()
+    
+    // States for delivery
+    val deliveriesState = remember(store.id) {
+        mutableStateMapOf<Int, String>().apply {
+            store.products.forEach { sp ->
+                val initVal = currentEdited[sp.product.id] ?: sp.deliveredQuantity
+                put(sp.product.id, initVal.toString())
+            }
+        }
+    }
+    
+    // States for sales
+    val salesState = remember(store.id) {
+        mutableStateMapOf<Int, String>().apply {
+            store.products.forEach { sp ->
+                put(sp.product.id, if (sp.soldQuantity == 0) "" else sp.soldQuantity.toString())
+            }
+        }
+    }
+    
     var obs by remember(store.id) { mutableStateOf(store.observations ?: "") }
-    val dE = delEmp.toIntOrNull() ?: 0; val dD = delDed.toIntOrNull() ?: 0
-    val sE = (soldEmp.toIntOrNull() ?: 0).coerceIn(0, dE)
-    val sD = (soldDed.toIntOrNull() ?: 0).coerceIn(0, dD)
-    val delivTotal = dE * EMPANADA_PRICE + dD * DEDITO_PRICE
-    val collTotal = sE * EMPANADA_PRICE + sD * DEDITO_PRICE
+    
+    // Build updated product list
+    val updatedProducts = store.products.map { sp ->
+        val delStr = deliveriesState[sp.product.id] ?: "0"
+        val soldStr = salesState[sp.product.id] ?: "0"
+        val dQty = delStr.toIntOrNull() ?: 0
+        val sQty = (soldStr.toIntOrNull() ?: 0).coerceIn(0, dQty)
+        StoreProduct(store.id, sp.product, dQty, sQty)
+    }
+    
+    val delivTotal = updatedProducts.sumOf { it.deliveredValue }
+    val collTotal = updatedProducts.sumOf { it.collectedValue }
     val notColl = (delivTotal - collTotal).coerceAtLeast(0)
+    
+    val isInvalid = store.products.any { sp ->
+        val delStr = deliveriesState[sp.product.id] ?: "0"
+        val soldStr = salesState[sp.product.id] ?: "0"
+        val dQty = delStr.toIntOrNull() ?: 0
+        val sQty = soldStr.toIntOrNull() ?: 0
+        sQty > dQty
+    }
+
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = Graphite, unfocusedBorderColor = SoftBorder,
         cursorColor = Graphite, focusedLabelColor = Graphite, unfocusedLabelColor = GraphiteLight)
@@ -206,7 +239,6 @@ fun StoreForm(
             }
             SoftDivider()
 
-            // ── Sección de deuda pendiente (si la tiene) ──
             if (hasDebt && tab == BottomTab.COBRO) {
                 Box(
                     Modifier.fillMaxWidth()
@@ -243,23 +275,25 @@ fun StoreForm(
 
             if (tab == BottomTab.REPARTO) {
                 Text("Apartado de Entregas", fontWeight = FontWeight.Bold, color = Mustard)
-                OutlinedTextField(delEmp, {
-                    delEmp = it.filter(Char::isDigit)
-                    val newEmp = delEmp.toIntOrNull() ?: 0
-                    editedDeliveries[store.id] = Pair(newEmp, delDed.toIntOrNull() ?: 0)
-                }, label = { Text("Empanadas entregadas") }, colors = fieldColors, enabled = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().focusRequester(focusRequester))
-                OutlinedTextField(delDed, {
-                    delDed = it.filter(Char::isDigit)
-                    val newDed = delDed.toIntOrNull() ?: 0
-                    editedDeliveries[store.id] = Pair(delEmp.toIntOrNull() ?: 0, newDed)
-                }, label = { Text("Deditos entregados") }, colors = fieldColors, enabled = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth())
+                
+                store.products.forEachIndexed { index, sp ->
+                    OutlinedTextField(
+                        value = deliveriesState[sp.product.id] ?: "",
+                        onValueChange = { 
+                            deliveriesState[sp.product.id] = it.filter(Char::isDigit)
+                            editedDeliveries[store.id] = deliveriesState.mapValues { entry -> entry.value.toIntOrNull() ?: 0 }
+                        },
+                        label = { Text("${sp.product.name} entregados") }, 
+                        colors = fieldColors, enabled = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(14.dp), 
+                        modifier = Modifier.fillMaxWidth().let { if (index == 0) it.focusRequester(focusRequester) else it }
+                    )
+                }
+
                 Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
                     Text("Total: \$$delivTotal", fontWeight = FontWeight.Bold, color = Graphite, modifier = Modifier.weight(1f))
-                    AccentButton("Guardar", { onSaveDelivered(store.id, dE, dD) }, Modifier.weight(1f), Mustard)
+                    AccentButton("Guardar", { onSaveDelivered(store.id, updatedProducts) }, Modifier.weight(1f), Mustard)
                 }
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -267,18 +301,26 @@ fun StoreForm(
                     Spacer(Modifier.width(6.dp))
                     Text("Apartado de Cobranza", fontWeight = FontWeight.Bold, color = SkyBlue)
                 }
-                Text("Base: E:${store.deliveredEmpanadas}  D:${store.deliveredDeditos}",
+                
+                val baseSummary = store.products.joinToString("  ") { "${it.product.name.take(1).uppercase()}:${it.deliveredQuantity}" }
+                Text("Base: $baseSummary",
                     style = MaterialTheme.typography.bodyMedium, color = GraphiteMedium)
-                val isInvalid = (soldEmp.toIntOrNull() ?: 0) > store.deliveredEmpanadas ||
-                        (soldDed.toIntOrNull() ?: 0) > store.deliveredDeditos
-                OutlinedTextField(soldEmp, { soldEmp = it.filter(Char::isDigit) },
-                    label = { Text("Empanadas vendidas") }, colors = fieldColors, enabled = !isBlocked,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    isError = isInvalid, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().focusRequester(focusRequester))
-                OutlinedTextField(soldDed, { soldDed = it.filter(Char::isDigit) },
-                    label = { Text("Deditos vendidos") }, colors = fieldColors, enabled = !isBlocked,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    isError = isInvalid, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth())
+                
+                store.products.forEachIndexed { index, sp ->
+                    val dQty = (deliveriesState[sp.product.id] ?: "0").toIntOrNull() ?: 0
+                    val sQtyStr = salesState[sp.product.id] ?: "0"
+                    val isProdInvalid = (sQtyStr.toIntOrNull() ?: 0) > dQty
+                    OutlinedTextField(
+                        value = salesState[sp.product.id] ?: "", 
+                        onValueChange = { salesState[sp.product.id] = it.filter(Char::isDigit) },
+                        label = { Text("${sp.product.name} vendidos") }, 
+                        colors = fieldColors, enabled = !isBlocked,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        isError = isProdInvalid, 
+                        shape = RoundedCornerShape(14.dp), 
+                        modifier = Modifier.fillMaxWidth().let { if (index == 0) it.focusRequester(focusRequester) else it }
+                    )
+                }
                 
                 OutlinedTextField(obs, { obs = it },
                     label = { Text("Observaciones / Novedades") }, colors = fieldColors, enabled = !isBlocked,
@@ -294,9 +336,9 @@ fun StoreForm(
                     Text("No cobrado: \$$notColl", fontWeight = FontWeight.Bold, color = StatusError)
                 }
                 Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp)) {
-                    AccentButton("Cobrada", { if (!isInvalid) onMarkCollected(store.id, sE, sD, obs.ifBlank { null }) },
+                    AccentButton("Cobrada", { if (!isInvalid) onMarkCollected(store.id, updatedProducts, obs.ifBlank { null }) },
                         Modifier.weight(1f), Sage, enabled = !isInvalid && !isBlocked)
-                    AccentButton("Deuda", { if (!isInvalid) onMarkPendingPayment(store.id, sE, sD, obs.ifBlank { null }) },
+                    AccentButton("Deuda", { if (!isInvalid) onMarkPendingPayment(store.id, updatedProducts, obs.ifBlank { null }) },
                         Modifier.weight(1f), StatusWarning, enabled = !isInvalid && !isBlocked && collTotal > 0)
                 }
             }

@@ -53,9 +53,8 @@ class MainActivity : ComponentActivity() {
                     onLogout = viewModel::logout,
                     onSelectStore = viewModel::selectStore,
                     onCloseStoreForm = viewModel::clearSelectedStore,
-                    onSaveDelivered = viewModel::saveDelivered,
+                    onSaveDelivered = viewModel::updateStoreProducts,
                     onSaveAllDelivered = viewModel::saveAllDelivered,
-                    onSaveSales = viewModel::saveSales,
                     onMarkCollected = viewModel::markCollected,
                     onMarkPendingPayment = viewModel::markAsPendingPayment,
                     onCollectDebt = viewModel::collectPendingDebt,
@@ -64,7 +63,13 @@ class MainActivity : ComponentActivity() {
                     onDismissMessage = viewModel::clearMessage,
                     onRedeemCode = viewModel::redeemCode,
                     onToggleLicenseDialog = viewModel::toggleLicenseDialog,
-                    onAcceptTerms = viewModel::acceptTerms
+                    onAcceptTerms = viewModel::acceptTerms,
+                    onAddProduct = viewModel::addProduct,
+                    onDeleteProduct = viewModel::deleteProduct,
+                    onAddRoute = viewModel::addRoute,
+                    onDeleteRoute = viewModel::deleteRoute,
+                    onAddStore = viewModel::addStore,
+                    onDeleteStore = viewModel::deleteStore
                 )
             }
         }

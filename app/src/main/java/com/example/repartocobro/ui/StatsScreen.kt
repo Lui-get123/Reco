@@ -34,8 +34,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.repartocobro.model.EMPANADA_PRICE
-import com.example.repartocobro.model.DEDITO_PRICE
 import com.example.repartocobro.model.Store
 import com.example.repartocobro.ui.components.SoftDivider
 import com.example.repartocobro.ui.components.cardShape
@@ -63,8 +61,12 @@ fun StatsScreen(stores: List<Store>) {
     val collectionRate = remember(total, collected) { if (total > 0) (collected.toFloat() / total * 100).toInt() else 0 }
     val totalDebt = remember(stores) { stores.sumOf { it.pendingDebtTotal } }
 
-    val storesWithSales by remember(stores) { derivedStateOf { stores.filter { it.soldEmpanadas > 0 || it.soldDeditos > 0 } } }
+    val storesWithSales by remember(stores) { derivedStateOf { stores.filter { store -> store.products.any { it.soldQuantity > 0 } } } }
     val storesWithDebt by remember(stores) { derivedStateOf { stores.filter { it.pendingDebtTotal > 0 } } }
+    
+    val allProducts = remember(stores) {
+        stores.flatMap { it.products }.map { it.product }.distinctBy { it.id }.sortedBy { it.id }
+    }
 
     Column(
         Modifier.fillMaxWidth(),
@@ -122,31 +124,19 @@ fun StatsScreen(stores: List<Store>) {
                     animProgress = animProgress
                 )
 
-                // Grouped bar chart — Entregado vs Vendido (Empanadas)
-                GroupedBarChartCard(
-                    title = "Empanadas: Entregadas vs Vendidas",
-                    stores = storesWithSales,
-                    value1Selector = { it.deliveredEmpanadas },
-                    value2Selector = { it.soldEmpanadas },
-                    color1 = Mustard,
-                    color2 = Sage,
-                    label1 = "Entregadas",
-                    label2 = "Vendidas",
-                    animProgress = animProgress
-                )
-
-                // Grouped bar chart — Entregado vs Vendido (Deditos)
-                GroupedBarChartCard(
-                    title = "Deditos: Entregados vs Vendidos",
-                    stores = storesWithSales,
-                    value1Selector = { it.deliveredDeditos },
-                    value2Selector = { it.soldDeditos },
-                    color1 = SkyBlue,
-                    color2 = Sage,
-                    label1 = "Entregados",
-                    label2 = "Vendidas",
-                    animProgress = animProgress
-                )
+                allProducts.forEachIndexed { index, prod ->
+                    GroupedBarChartCard(
+                        title = "${prod.name}: Entregados vs Vendidos",
+                        stores = storesWithSales,
+                        value1Selector = { store -> store.products.firstOrNull { it.product.id == prod.id }?.deliveredQuantity ?: 0 },
+                        value2Selector = { store -> store.products.firstOrNull { it.product.id == prod.id }?.soldQuantity ?: 0 },
+                        color1 = if (index % 2 == 0) Mustard else SkyBlue,
+                        color2 = Sage,
+                        label1 = "Entregados",
+                        label2 = "Vendidos",
+                        animProgress = animProgress
+                    )
+                }
             } else {
                 // Mensaje si no hay ventas aún
                 Box(Modifier.fillMaxWidth().shadow(2.dp, cardShape).clip(cardShape).background(WhiteSurface).padding(24.dp), contentAlignment = Alignment.Center) {

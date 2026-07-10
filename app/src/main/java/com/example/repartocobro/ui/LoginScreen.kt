@@ -33,13 +33,6 @@ fun LoginContent(state: AppUiState, onLogin: (Int) -> Unit, onOpenAdmin: () -> U
     var termsChecked by remember { mutableStateOf(state.hasAcceptedTerms) }
 
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Bone, Cream, SkyBlueSoft, Bone)))) {
-        // Admin Button at the top right
-        IconButton(
-            onClick = onOpenAdmin,
-            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).padding(top = 24.dp)
-        ) {
-            Icon(Icons.Rounded.Settings, contentDescription = "Admin", tint = Graphite, modifier = Modifier.size(28.dp))
-        }
 
         Column(
             Modifier.fillMaxWidth().fillMaxHeight(0.55f).padding(24.dp),
@@ -69,8 +62,16 @@ fun LoginContent(state: AppUiState, onLogin: (Int) -> Unit, onOpenAdmin: () -> U
                 .background(Color.White).padding(24.dp)
         ) {
             Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Selecciona tu perfil", style = MaterialTheme.typography.bodySmall,
-                    color = GraphiteMedium, fontWeight = FontWeight.Medium)
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text("Selecciona tu perfil", style = MaterialTheme.typography.bodySmall,
+                        color = GraphiteMedium, fontWeight = FontWeight.Medium)
+                    IconButton(
+                        onClick = onOpenAdmin,
+                        modifier = Modifier.align(Alignment.CenterEnd).size(36.dp).offset(x = 12.dp)
+                    ) {
+                        Icon(Icons.Rounded.Settings, contentDescription = "Admin", tint = GraphiteMedium, modifier = Modifier.size(22.dp))
+                    }
+                }
                 Spacer(Modifier.height(12.dp))
 
                 // ── Términos y Condiciones ──

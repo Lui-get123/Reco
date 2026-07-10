@@ -14,7 +14,7 @@
     
     <!-- Coin (Cobro) -->
     <path
-        android:fillColor="@color/yellow_primary"
+        android:fillColor="@color/mustard"
         android:pathData="M70,66 A12,12 0 1,1 70.01,66 Z" />
     <path
         android:fillColor="#FFFFFF"

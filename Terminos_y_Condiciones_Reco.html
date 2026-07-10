@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Términos y Condiciones — Reco</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #2d2d2d;
+            line-height: 1.7;
+            background: #f8f9fa;
+            padding: 0;
+        }
+
+        .page {
+            max-width: 210mm;
+            margin: 20px auto;
+            background: white;
+            padding: 50px 55px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .page {
+                max-width: 100%;
+                margin: 0;
+                padding: 40px 50px;
+                box-shadow: none;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 25px;
+            margin-bottom: 30px;
+        }
+
+        .header .logo-text {
+            font-size: 42px;
+            font-weight: 800;
+            color: #2e7d32;
+            letter-spacing: 3px;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-top: 20px;
+        }
+
+        .header .date {
+            font-size: 12px;
+            color: #999;
+            margin-top: 6px;
+        }
+
+        /* Sections */
+        .section {
+            margin-bottom: 24px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #2e7d32;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1.5px solid #e8f5e9;
+        }
+
+        .section-body {
+            font-size: 12.5px;
+            color: #444;
+            text-align: justify;
+        }
+
+        .section-body p {
+            margin-bottom: 8px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 12px;
+        }
+
+        table thead th {
+            background: #2e7d32;
+            color: white;
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        table tbody td {
+            padding: 7px 12px;
+            border-bottom: 1px solid #e8e8e8;
+            color: #555;
+            font-size: 12px;
+        }
+
+        table tbody tr:nth-child(even) {
+            background: #f9fdf9;
+        }
+
+        /* Lists */
+        ul {
+            padding-left: 20px;
+            margin: 6px 0;
+        }
+
+        ul li {
+            font-size: 12.5px;
+            color: #444;
+            margin-bottom: 4px;
+        }
+
+        ul li strong {
+            color: #333;
+        }
+
+        /* Info box */
+        .info-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 6px 6px 0;
+            font-size: 12px;
+            color: #2e7d32;
+        }
+
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 6px 6px 0;
+            font-size: 12px;
+            color: #e65100;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 2px solid #e8e8e8;
+            text-align: center;
+            font-size: 11px;
+            color: #999;
+        }
+
+        .footer .copyright {
+            font-weight: 600;
+            color: #666;
+        }
+
+        /* Signature area */
+        .signature-area {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            page-break-inside: avoid;
+        }
+
+        .signature-block {
+            width: 45%;
+            text-align: center;
+        }
+
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-top: 50px;
+            padding-top: 6px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        /* Print button */
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #2e7d32;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(46,125,50,0.3);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .print-btn:hover {
+            background: #1b5e20;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46,125,50,0.4);
+        }
+
+        .two-col {
+            display: flex;
+            gap: 20px;
+        }
+
+        .two-col .col {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">📄 Guardar como PDF</button>
+
+<div class="page">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="logo-text">Reco</div>
+        <div class="subtitle">Reparto &amp; Cobro</div>
+        <h1>Términos y Condiciones de Uso</h1>
+        <div class="date">Última actualización: Mayo 2026</div>
+    </div>
+
+    <!-- 1. ACEPTACIÓN -->
+    <div class="section">
+        <div class="section-title">1. Aceptación de los Términos</div>
+        <div class="section-body">
+            <p>Al descargar, instalar o utilizar la aplicación <strong>Reco</strong> ("la Aplicación"), usted ("el Usuario") acepta estar sujeto a los presentes Términos y Condiciones de uso ("los Términos"). Si no está de acuerdo con alguno de estos términos, no deberá utilizar la Aplicación.</p>
+            <p>La aceptación de estos Términos es <strong>obligatoria</strong> y se realiza de manera explícita mediante la casilla de verificación presentada en la pantalla de inicio de sesión. Sin esta aceptación, el acceso a las funcionalidades de la Aplicación quedará restringido.</p>
+        </div>
+    </div>
+
+    <!-- 2. DESCRIPCIÓN DEL SERVICIO -->
+    <div class="section">
+        <div class="section-title">2. Descripción del Servicio</div>
+        <div class="section-body">
+            <p><strong>Reco</strong> es una aplicación móvil para dispositivos Android diseñada como herramienta interna de gestión para el seguimiento de rutas de reparto y cobranza de productos alimenticios. La Aplicación permite:</p>
+            <ul>
+                <li><strong>Gestión de Reparto:</strong> Registro de cantidades entregadas de productos (empanadas y deditos) en las tiendas asignadas a cada ruta.</li>
+                <li><strong>Gestión de Cobro:</strong> Registro de cantidades vendidas, cálculo automático de montos y marcado de tiendas como cobradas.</li>
+                <li><strong>Exportación de Reportes:</strong> Generación de documentos PDF con el resumen detallado de cobranza por ruta.</li>
+                <li><strong>Control de Acceso:</strong> Sistema de licenciamiento mensual mediante códigos de activación.</li>
+            </ul>
+            <div class="warning-box">
+                <strong>Importante:</strong> La Aplicación es una herramienta de registro y apoyo operativo. No constituye un sistema contable oficial y no sustituye la verificación física de mercancía ni los registros contables formales del negocio.
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. LICENCIA DE USO -->
+    <div class="section">
+        <div class="section-title">3. Licencia de Uso y Acceso</div>
+        <div class="section-body">
+            <p>El acceso a la Aplicación está sujeto a las siguientes condiciones de licenciamiento:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Aspecto</th>
+                        <th>Detalle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Modelo de licencia</td><td>Mensual, mediante código de activación</td></tr>
+                    <tr><td>Duración por código</td><td>30 días calendario</td></tr>
+                    <tr><td>Formato del código</td><td>MESAÑO-TOKEN (ej: MAYO2026-XK9P2L)</td></tr>
+                    <tr><td>Uso del código</td><td>Un solo uso — no reutilizable</td></tr>
+                    <tr><td>Transferibilidad</td><td>Intransferible — uso personal del titular</td></tr>
+                    <tr><td>Validación temporal</td><td>Solo códigos del mes y año en curso</td></tr>
+                    <tr><td>Conexión requerida</td><td>Internet para activar el código</td></tr>
+                </tbody>
+            </table>
+            <p>Una vez activada la licencia, la Aplicación funciona sin conexión a internet para las operaciones de reparto y cobro. Al expirar la licencia, la Aplicación se bloqueará automáticamente hasta que se ingrese un nuevo código válido.</p>
+            <p>El uso indebido, distribución no autorizada o falsificación de códigos de licencia puede resultar en la <strong>suspensión permanente</strong> del servicio sin derecho a reembolso.</p>
+        </div>
+    </div>
+
+    <!-- 4. FUNCIONALIDADES PERMITIDAS -->
+    <div class="section">
+        <div class="section-title">4. Funcionalidades y Alcance de la Aplicación</div>
+        <div class="section-body">
+            <p>Con una licencia activa, el Usuario tiene acceso a las siguientes funcionalidades:</p>
+
+            <div class="two-col">
+                <div class="col">
+                    <p><strong>✅ El Usuario PUEDE:</strong></p>
+                    <ul>
+                        <li>Seleccionar su perfil de cobrador/repartidor</li>
+                        <li>Registrar cantidades entregadas por tienda</li>
+                        <li>Registrar cantidades vendidas por tienda</li>
+                        <li>Marcar tiendas como repartidas o cobradas</li>
+                        <li>Visualizar resúmenes del día</li>
+                        <li>Generar y descargar reportes en PDF</li>
+                        <li>Reiniciar la ruta para un nuevo día</li>
+                        <li>Consultar el estado de su licencia</li>
+                        <li>Extender su licencia con un nuevo código</li>
+                    </ul>
+                </div>
+                <div class="col">
+                    <p><strong>❌ El Usuario NO PUEDE:</strong></p>
+                    <ul>
+                        <li>Crear, eliminar o renombrar tiendas</li>
+                        <li>Crear, eliminar o modificar rutas</li>
+                        <li>Crear o eliminar perfiles de cobrador</li>
+                        <li>Modificar los precios de productos</li>
+                        <li>Editar tiendas ya marcadas como cobradas</li>
+                        <li>Registrar ventas superiores a las entregas</li>
+                        <li>Transferir su licencia a terceros</li>
+                        <li>Exportar o respaldar la base de datos</li>
+                        <li>Acceder a funciones administrativas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. RESPONSABILIDAD DEL USUARIO -->
+    <div class="section">
+        <div class="section-title">5. Responsabilidades del Usuario</div>
+        <div class="section-body">
+            <p>El Usuario se compromete a:</p>
+            <ul>
+                <li><strong>Veracidad de datos:</strong> Ingresar información precisa y verídica sobre las cantidades entregadas, vendidas y cobradas.</li>
+                <li><strong>Custodia del código:</strong> Mantener la confidencialidad de su código de licencia y no compartirlo con terceros.</li>
+                <li><strong>Uso adecuado:</strong> Utilizar la Aplicación exclusivamente para los fines de gestión de reparto y cobro para los cuales fue diseñada.</li>
+                <li><strong>Dispositivo:</strong> Mantener su dispositivo en condiciones adecuadas de funcionamiento y con sistema operativo Android compatible.</li>
+            </ul>
+            <p>El Usuario reconoce que la Aplicación <strong>no almacena un historial</strong> de rutas anteriores. Al reiniciar la ruta, los datos previos se eliminan de forma permanente. Es responsabilidad del Usuario generar los reportes PDF antes de reiniciar.</p>
+        </div>
+    </div>
+
+    <!-- 6. PRIVACIDAD Y DATOS -->
+    <div class="section">
+        <div class="section-title">6. Privacidad y Protección de Datos</div>
+        <div class="section-body">
+            <p>La Aplicación maneja dos tipos de almacenamiento de datos:</p>
+
+            <p><strong>a) Datos Locales (en el dispositivo):</strong></p>
+            <ul>
+                <li>Perfil del cobrador seleccionado</li>
+                <li>Cantidades entregadas y vendidas por tienda</li>
+                <li>Estado de las tiendas (repartida/cobrada) y fechas</li>
+                <li>Estado de membresía y fecha de vencimiento</li>
+                <li>Aceptación de los presentes Términos</li>
+            </ul>
+
+            <p><strong>b) Datos Remotos (servidor Supabase):</strong></p>
+            <ul>
+                <li>Código de licencia ingresado (para validación)</li>
+                <li>Estado de uso del código (usado/disponible)</li>
+            </ul>
+
+            <div class="info-box">
+                <strong>Compromiso de privacidad:</strong> No se transmiten datos personales del Usuario ni datos operativos de reparto/cobro al servidor. La comunicación remota es exclusivamente para la validación de licencias. No se comparten datos con terceros.
+            </div>
+
+            <p>La Aplicación utiliza únicamente el permiso de <strong>Internet</strong> (para validación de licencias) y acceso implícito al almacenamiento (para guardar PDFs en la carpeta de Descargas). No solicita acceso a cámara, micrófono, ubicación, contactos ni ningún otro dato sensible del dispositivo.</p>
+        </div>
+    </div>
+
+    <!-- 7. PRODUCTOS Y PRECIOS -->
+    <div class="section">
+        <div class="section-title">7. Productos y Precios Registrados</div>
+        <div class="section-body">
+            <p>La Aplicación gestiona el registro de los siguientes productos con precios unitarios fijos:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Precio Unitario</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Empanada</td><td>$1.000 COP</td></tr>
+                    <tr><td>Dedito</td><td>$900 COP</td></tr>
+                </tbody>
+            </table>
+            <p>Estos precios están configurados internamente en la Aplicación y <strong>no pueden ser modificados</strong> por el Usuario. Cualquier ajuste de precios requiere una actualización de la Aplicación por parte del desarrollador.</p>
+        </div>
+    </div>
+
+    <!-- 8. PROPIEDAD INTELECTUAL -->
+    <div class="section">
+        <div class="section-title">8. Propiedad Intelectual</div>
+        <div class="section-body">
+            <p>La Aplicación <strong>Reco</strong>, incluyendo pero no limitado a su código fuente, diseño de interfaz, logotipo, nombre comercial, estructura de datos y documentación, es propiedad exclusiva de <strong>LuisPG</strong> y está protegida por las leyes de propiedad intelectual aplicables.</p>
+            <p>Queda estrictamente prohibido:</p>
+            <ul>
+                <li>Copiar, modificar, distribuir o crear obras derivadas de la Aplicación.</li>
+                <li>Realizar ingeniería inversa, descompilar o desensamblar el código fuente.</li>
+                <li>Utilizar la marca "Reco" o cualquier elemento visual sin autorización escrita.</li>
+                <li>Sublicenciar, vender o transferir la Aplicación a terceros.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 9. LIMITACIÓN DE RESPONSABILIDAD -->
+    <div class="section">
+        <div class="section-title">9. Limitación de Responsabilidad</div>
+        <div class="section-body">
+            <p>La Aplicación se proporciona <strong>"tal cual"</strong> y <strong>"según disponibilidad"</strong>, sin garantías de ningún tipo, ya sean expresas o implícitas. El desarrollador no será responsable por:</p>
+            <ul>
+                <li>Pérdida de datos almacenados en el dispositivo del Usuario.</li>
+                <li>Interrupciones del servicio por problemas de conectividad o mantenimiento del servidor.</li>
+                <li>Daños directos, indirectos, incidentales o consecuentes derivados del uso de la Aplicación.</li>
+                <li>Errores en los cálculos si el Usuario ingresa información incorrecta.</li>
+                <li>Incompatibilidades con versiones específicas de Android o dispositivos particulares.</li>
+            </ul>
+            <p>El Usuario acepta que el uso de la Aplicación es bajo su propia cuenta y riesgo.</p>
+        </div>
+    </div>
+
+    <!-- 10. SUSPENSIÓN Y TERMINACIÓN -->
+    <div class="section">
+        <div class="section-title">10. Suspensión y Terminación del Servicio</div>
+        <div class="section-body">
+            <p>El desarrollador se reserva el derecho de suspender o terminar el acceso a la Aplicación, sin previo aviso, en los siguientes casos:</p>
+            <ul>
+                <li>Uso fraudulento o distribución no autorizada de códigos de licencia.</li>
+                <li>Intentos de manipulación, hackeo o acceso no autorizado al sistema.</li>
+                <li>Violación de cualquiera de los presentes Términos y Condiciones.</li>
+                <li>Decisión del desarrollador de descontinuar la Aplicación.</li>
+            </ul>
+            <p>En caso de terminación, el Usuario no tendrá derecho a reembolso de licencias no consumidas ni a la recuperación de datos.</p>
+        </div>
+    </div>
+
+    <!-- 11. MODIFICACIONES -->
+    <div class="section">
+        <div class="section-title">11. Modificaciones a los Términos</div>
+        <div class="section-body">
+            <p>El desarrollador se reserva el derecho de modificar estos Términos y Condiciones en cualquier momento. Los cambios serán efectivos inmediatamente después de su publicación dentro de la Aplicación.</p>
+            <p>El uso continuado de la Aplicación después de la publicación de cambios constituye la <strong>aceptación tácita</strong> de los Términos modificados. Se recomienda al Usuario revisar periódicamente estos Términos.</p>
+        </div>
+    </div>
+
+    <!-- 12. LEGISLACIÓN APLICABLE -->
+    <div class="section">
+        <div class="section-title">12. Legislación Aplicable y Jurisdicción</div>
+        <div class="section-body">
+            <p>Los presentes Términos y Condiciones se rigen e interpretan de conformidad con las leyes de la <strong>República de Colombia</strong>. Cualquier controversia derivada del uso de la Aplicación será sometida a la jurisdicción de los tribunales competentes de Colombia.</p>
+        </div>
+    </div>
+
+    <!-- 13. CONTACTO -->
+    <div class="section">
+        <div class="section-title">13. Contacto</div>
+        <div class="section-body">
+            <p>Para cualquier consulta, reclamación o solicitud relacionada con estos Términos y Condiciones o con el funcionamiento de la Aplicación, el Usuario puede comunicarse a través de los canales oficiales de soporte del desarrollador.</p>
+            <p><strong>Desarrollador:</strong> LuisPG<br>
+            <strong>Aplicación:</strong> Reco — Reparto & Cobro<br>
+            <strong>Año:</strong> 2026</p>
+        </div>
+    </div>
+
+    <!-- FIRMA -->
+    <div class="signature-area">
+        <div class="signature-block">
+            <div class="signature-line">El Desarrollador — LuisPG</div>
+        </div>
+        <div class="signature-block">
+            <div class="signature-line">El Usuario</div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <p class="copyright">© 2026 LuisPG — Todos los derechos reservados.</p>
+        <p>Reco — Reparto & Cobro | Versión de documento: 1.0 | Mayo 2026</p>
+    </div>
+
+</div>
+
+</body>
+</html>

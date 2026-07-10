@@ -1,6 +1,7 @@
 package com.example.repartocobro.data
 
 import android.content.ContentValues
+import com.example.repartocobro.BuildConfig
 import com.example.repartocobro.model.LicenseStatus
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -18,20 +19,22 @@ import java.util.concurrent.TimeUnit
  * Repositorio de licencias que valida códigos contra la tabla "Licencia" en Supabase.
  *
  * Flujo de validación:
- * 1. Consultar Supabase para verificar que el código exista.
- * 2. Verificar que el mes y año coincidan con la fecha actual.
+ * 1. Validar formato: serial alfanumérico de 12 caracteres.
+ * 2. Consultar Supabase para verificar que el código exista.
  * 3. Verificar que el campo "usado" sea false.
- * 4. Si es válido: marcar como usado en Supabase + activar membresía local.
+ * 4. Si es válido: marcar como usado en Supabase + activar membresía local (+15 días).
  * 5. Si no es válido: retornar error descriptivo.
  */
 class SupabaseLicenseRepository(private val dbHelper: AppDatabaseHelper) {
 
     companion object {
-        private const val SUPABASE_URL = "https://jlyecfmddblefnurinjx.supabase.co"
-        private const val SUPABASE_ANON_KEY =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpseWVjZm1kZGJsZWZudXJpbmp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNjYzNzQsImV4cCI6MjA5Mjg0MjM3NH0.To_gCYERXuhlvd1itI0fnAQeHZ1g7zyJyv3DzNZ_sPM"
+        // Credenciales inyectadas desde local.properties vía BuildConfig
+        private val SUPABASE_URL = BuildConfig.SUPABASE_URL
+        private val SUPABASE_ANON_KEY = BuildConfig.SUPABASE_ANON_KEY
         private const val TABLE = "licencia"
         private val JSON_TYPE = "application/json; charset=utf-8".toMediaType()
+        private const val SERIAL_LENGTH = 12
+        private const val DAYS_PER_LICENSE = 15
     }
 
     private val client = OkHttpClient.Builder()
@@ -41,21 +44,6 @@ class SupabaseLicenseRepository(private val dbHelper: AppDatabaseHelper) {
         .build()
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-
-    private val monthNames = mapOf(
-        Calendar.JANUARY to "ENERO",
-        Calendar.FEBRUARY to "FEBRERO",
-        Calendar.MARCH to "MARZO",
-        Calendar.APRIL to "ABRIL",
-        Calendar.MAY to "MAYO",
-        Calendar.JUNE to "JUNIO",
-        Calendar.JULY to "JULIO",
-        Calendar.AUGUST to "AGOSTO",
-        Calendar.SEPTEMBER to "SEPTIEMBRE",
-        Calendar.OCTOBER to "OCTUBRE",
-        Calendar.NOVEMBER to "NOVIEMBRE",
-        Calendar.DECEMBER to "DICIEMBRE"
-    )
 
     // ─────────────────────────────────────────────────────────────
     //  Resultado del canjeo
@@ -71,97 +59,54 @@ class SupabaseLicenseRepository(private val dbHelper: AppDatabaseHelper) {
     // ─────────────────────────────────────────────────────────────
 
     /**
-     * Valida un código contra Supabase (tabla Licencia) y si es válido,
-     * lo marca como usado y activa la membresía local.
+     * Valida un serial de 12 caracteres contra Supabase (tabla Licencia) y si es válido,
+     * lo marca como usado y activa la membresía local (+15 días).
      *
      * DEBE ejecutarse en un hilo de fondo (coroutine / Dispatchers.IO).
      */
     fun redeemCode(code: String): RedeemResult {
         val trimmed = code.trim().uppercase()
 
-        // 1. Validar formato básico: MESAÑO-TOKEN
-        val parts = trimmed.split("-")
-        if (parts.size != 2) {
-            return RedeemResult.Error("❌ Formato inválido. Usa: MES+AÑO-CÓDIGO\n(Ej: ABRIL2026-AB12XZ)")
+        // 1. Validar formato: serial alfanumérico de 12 caracteres
+        if (trimmed.length != SERIAL_LENGTH) {
+            return RedeemResult.Error("El código debe tener exactamente $SERIAL_LENGTH caracteres.")
         }
 
-        val prefixPart = parts[0]
-        val tokenPart = parts[1]
-
-        if (tokenPart.length !in 4..6 || !tokenPart.all { it.isLetterOrDigit() }) {
-            return RedeemResult.Error("❌ El token debe tener 4–6 caracteres alfanuméricos.")
+        if (!trimmed.all { it.isLetterOrDigit() }) {
+            return RedeemResult.Error("El código solo debe contener letras y números.")
         }
 
-        // 2. Extraer mes y año del código
-        val (codeMes, codeAnio) = extractMonthYear(prefixPart)
-            ?: return RedeemResult.Error("❌ No se pudo reconocer el mes/año del código.")
-
-        // 3. Validar que coincidan con la fecha actual
-        val cal = Calendar.getInstance()
-        val currentMes = monthNames[cal.get(Calendar.MONTH)] ?: ""
-        val currentAnio = cal.get(Calendar.YEAR)
-
-        if (codeAnio != currentAnio) {
-            return RedeemResult.Error(
-                "❌ Este código es del año $codeAnio.\nSolo se pueden usar códigos del año actual ($currentAnio)."
-            )
-        }
-
-        if (codeMes != currentMes) {
-            val codeMonthIndex = monthNames.entries.firstOrNull { it.value == codeMes }?.key
-            val currentMonthIndex = cal.get(Calendar.MONTH)
-            return if (codeMonthIndex != null && codeMonthIndex > currentMonthIndex) {
-                RedeemResult.Error("❌ Este código es para $codeMes $codeAnio.\nAún no puedes usarlo, espera al mes correspondiente.")
-            } else {
-                RedeemResult.Error("❌ Este código era para $codeMes $codeAnio.\nYa expiró, solicita el código del mes actual ($currentMes).")
-            }
-        }
-
-        // 4. Consultar Supabase: buscar el código en la tabla Licencia
+        // 2. Consultar Supabase: buscar el código en la tabla Licencia
         try {
             val row = fetchLicenseFromSupabase(trimmed)
-                ?: return RedeemResult.Error("❌ Código no encontrado.\nVerifica que el código sea correcto.")
+                ?: return RedeemResult.Error("Código no encontrado.\nVerifica que el código sea correcto.")
 
-            // 5. Verificar que el campo "usado" sea false
+            // 3. Verificar que el campo "usado" sea false
             val usado = row.optBoolean("usado", true)
             if (usado) {
-                return RedeemResult.Error("❌ Este código ya fue utilizado.\nSolicita un código nuevo.")
+                return RedeemResult.Error("Este código ya fue utilizado.\nSolicita un código nuevo.")
             }
 
-            // 6. Verificar mes y año en Supabase coincidan
-            val supabaseMesNum = row.optInt("mes", 0)
-            val supabaseAnio = row.optInt("año", 0)
-
-            val currentMonthIndex = cal.get(Calendar.MONTH) + 1 // 1-12
-
-            if (supabaseMesNum != currentMonthIndex || supabaseAnio != currentAnio) {
-                return RedeemResult.Error(
-                    "❌ El código no corresponde al mes actual.\nMes del código: $supabaseMesNum/$supabaseAnio"
-                )
-            }
-
-            // 7. Marcar como usado en Supabase
+            // 4. Marcar como usado en Supabase
             val marked = markCodeAsUsedInSupabase(trimmed)
             if (!marked) {
-                return RedeemResult.Error("❌ Error al activar la licencia.\nIntenta de nuevo más tarde.")
+                return RedeemResult.Error("Error al activar la licencia.\nIntenta de nuevo más tarde.")
             }
 
-            // 8. Activar membresía local
+            // 5. Activar membresía local (+15 días)
             val newExpiration = activateLocalMembership()
 
-            val daysRemaining = calculateDaysRemaining(newExpiration)
-
             return RedeemResult.Success(
-                daysAdded = 30,
+                daysAdded = DAYS_PER_LICENSE,
                 newExpiration = newExpiration
             )
 
         } catch (e: java.net.UnknownHostException) {
-            return RedeemResult.Error("❌ Sin conexión a internet.\nVerifica tu conexión e intenta de nuevo.")
+            return RedeemResult.Error("Sin conexión a internet.\nVerifica tu conexión e intenta de nuevo.")
         } catch (e: java.net.SocketTimeoutException) {
-            return RedeemResult.Error("❌ Tiempo de espera agotado.\nVerifica tu conexión e intenta de nuevo.")
+            return RedeemResult.Error("Tiempo de espera agotado.\nVerifica tu conexión e intenta de nuevo.")
         } catch (e: Exception) {
-            return RedeemResult.Error("❌ Error de conexión: ${e.localizedMessage ?: "desconocido"}\nIntenta de nuevo más tarde.")
+            return RedeemResult.Error("Error de conexión: ${e.localizedMessage ?: "desconocido"}\nIntenta de nuevo más tarde.")
         }
     }
 
@@ -228,7 +173,7 @@ class SupabaseLicenseRepository(private val dbHelper: AppDatabaseHelper) {
     // ─────────────────────────────────────────────────────────────
 
     /**
-     * Activa la membresía local y extiende la fecha de vencimiento +30 días.
+     * Activa la membresía local y extiende la fecha de vencimiento +15 días (quincenal).
      * @return La nueva fecha de vencimiento en formato yyyy-MM-dd.
      */
     private fun activateLocalMembership(): String {
@@ -252,7 +197,7 @@ class SupabaseLicenseRepository(private val dbHelper: AppDatabaseHelper) {
             }
         }
 
-        // Calcular nueva fecha: max(hoy, fecha_actual) + 30 días
+        // Calcular nueva fecha: max(hoy, fecha_actual) + 15 días
         val today = Date()
         val baseDate = if (currentExpiration != null && currentExpiration!!.after(today)) {
             currentExpiration!!
@@ -261,7 +206,7 @@ class SupabaseLicenseRepository(private val dbHelper: AppDatabaseHelper) {
         }
         val calendar = Calendar.getInstance().apply {
             time = baseDate
-            add(Calendar.DAY_OF_YEAR, 30)
+            add(Calendar.DAY_OF_YEAR, DAYS_PER_LICENSE)
         }
         val newExpiration = dateFormat.format(calendar.time)
 
@@ -364,16 +309,4 @@ class SupabaseLicenseRepository(private val dbHelper: AppDatabaseHelper) {
         return (diffMs / (1000 * 60 * 60 * 24)).toInt()
     }
 
-    private fun extractMonthYear(prefix: String): Pair<String, Int>? {
-        for ((_, mesName) in monthNames) {
-            if (prefix.startsWith(mesName)) {
-                val yearStr = prefix.removePrefix(mesName)
-                val year = yearStr.toIntOrNull() ?: continue
-                if (year in 2020..2099) {
-                    return Pair(mesName, year)
-                }
-            }
-        }
-        return null
-    }
 }

@@ -10,8 +10,11 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import com.example.repartocobro.model.DEDITO_PRICE
+import com.example.repartocobro.model.EMPANADA_PRICE
 import com.example.repartocobro.model.Route
 import com.example.repartocobro.model.RouteSummary
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -19,6 +22,12 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+data class PdfExportResult(
+    val localPath: String,
+    val fileName: String,
+    val pdfBytes: ByteArray
+)
 
 class PdfExporter {
 
@@ -49,7 +58,7 @@ class PdfExporter {
         route: Route,
         collectorName: String,
         summary: RouteSummary
-    ): Result<String> {
+    ): Result<PdfExportResult> {
         return runCatching {
             val document = PdfDocument()
             var pageNumber = 1
@@ -137,7 +146,7 @@ class PdfExporter {
 
             // === HEADER ===
             val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-            canvas.drawText("📋 Resumen de Cobranza", MARGIN_LEFT, y, titlePaint)
+            canvas.drawText("Resumen de Cobranza", MARGIN_LEFT, y, titlePaint)
             y += 18f
             canvas.drawText(
                 "Ruta: ${route.name}  •  Cobrador: $collectorName  •  ${dateFormat.format(Date())}",
@@ -152,44 +161,84 @@ class PdfExporter {
             y += 16f
 
             // === TABLE: Column definitions ===
-            // Columns: #, Tienda, Entr.Emp, Entr.Ded, Vend.Emp, Vend.Ded, Cobrado, Fecha
-            val colX = floatArrayOf(
+            // Columns: #, Tienda, Ent.E, Ent.D, Vnd.E, Vnd.D, T.Entreg, Cobrado, Deuda, Novedad
+            val colStarts = floatArrayOf(
                 MARGIN_LEFT,           // # (20pt)
-                MARGIN_LEFT + 20f,     // Tienda (110pt)
-                MARGIN_LEFT + 130f,    // Ent.E (50pt)
-                MARGIN_LEFT + 180f,    // Ent.D (50pt)
-                MARGIN_LEFT + 230f,    // Vnd.E (50pt)
-                MARGIN_LEFT + 280f,    // Vnd.D (50pt)
-                MARGIN_LEFT + 330f,    // Cobrado (80pt)
-                MARGIN_LEFT + 410f     // Fecha (remaining)
+                MARGIN_LEFT + 20f,     // Tienda (85pt)
+                MARGIN_LEFT + 105f,    // Ent.E (38pt)
+                MARGIN_LEFT + 143f,    // Ent.D (38pt)
+                MARGIN_LEFT + 181f,    // Vnd.E (38pt)
+                MARGIN_LEFT + 219f,    // Vnd.D (38pt)
+                MARGIN_LEFT + 257f,    // T.Entreg (55pt)
+                MARGIN_LEFT + 312f,    // Cobrado (55pt)
+                MARGIN_LEFT + 367f,    // Deuda (55pt)
+                MARGIN_LEFT + 422f     // Novedad (remaining ~100pt)
             )
             val tableRight = PAGE_WIDTH - MARGIN_RIGHT
 
+            // Paint for centered header text
+            val headerCenterPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = 8.5f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                color = Color.WHITE
+                textAlign = Paint.Align.CENTER
+            }
+            // Paint for centered cell text
+            val cellCenterPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = 9f
+                color = Color.rgb(50, 50, 50)
+                textAlign = Paint.Align.CENTER
+            }
+            val cellCenterBoldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = 9f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                color = Color.rgb(50, 50, 50)
+                textAlign = Paint.Align.CENTER
+            }
+
+            // Column midpoints for centered text
+            val colMids = floatArrayOf(
+                (colStarts[0] + colStarts[1]) / 2f,    // # mid
+                (colStarts[1] + colStarts[2]) / 2f,    // Tienda mid
+                (colStarts[2] + colStarts[3]) / 2f,    // Ent.E mid
+                (colStarts[3] + colStarts[4]) / 2f,    // Ent.D mid
+                (colStarts[4] + colStarts[5]) / 2f,    // Vnd.E mid
+                (colStarts[5] + colStarts[6]) / 2f,    // Vnd.D mid
+                (colStarts[6] + colStarts[7]) / 2f,    // T.Entreg mid
+                (colStarts[7] + colStarts[8]) / 2f,    // Cobrado mid
+                (colStarts[8] + colStarts[9]) / 2f,    // Deuda mid
+                (colStarts[9] + tableRight) / 2f       // Novedad mid
+            )
+
             // --- Table header ---
             ensureSpace(TABLE_HEADER_HEIGHT + STORE_ROW_HEIGHT)
-            canvas.drawRect(MARGIN_LEFT, y - 12f, tableRight, y + 10f, headerBgPaint)
-            canvas.drawText("#", colX[0] + 4f, y + 4f, headerPaint)
-            canvas.drawText("Tienda", colX[1] + 4f, y + 4f, headerPaint)
-            canvas.drawText("Ent.E", colX[2] + 4f, y + 4f, headerPaint)
-            canvas.drawText("Ent.D", colX[3] + 4f, y + 4f, headerPaint)
-            canvas.drawText("Vnd.E", colX[4] + 4f, y + 4f, headerPaint)
-            canvas.drawText("Vnd.D", colX[5] + 4f, y + 4f, headerPaint)
-            canvas.drawText("Cobrado", colX[6] + 4f, y + 4f, headerPaint)
-            canvas.drawText("Fecha", colX[7] + 4f, y + 4f, headerPaint)
-            y += 14f
+            canvas.drawRect(MARGIN_LEFT, y - 14f, tableRight, y + 14f, headerBgPaint)
+            canvas.drawText("#", colMids[0], y + 3f, headerCenterPaint)
+            canvas.drawText("Tienda", colMids[1], y + 3f, headerCenterPaint)
+            canvas.drawText("Ent.E", colMids[2], y + 3f, headerCenterPaint)
+            canvas.drawText("Ent.D", colMids[3], y + 3f, headerCenterPaint)
+            canvas.drawText("Vnd.E", colMids[4], y + 3f, headerCenterPaint)
+            canvas.drawText("Vnd.D", colMids[5], y + 3f, headerCenterPaint)
+            canvas.drawText("T.Entreg", colMids[6], y + 3f, headerCenterPaint)
+            canvas.drawText("Cobrado", colMids[7], y + 3f, headerCenterPaint)
+            canvas.drawText("Deuda", colMids[8], y + 3f, headerCenterPaint)
+            canvas.drawText("Novedad", colMids[9], y + 3f, headerCenterPaint)
+            y += 18f
 
             // Helper to redraw table header on new pages
             fun drawTableHeader() {
-                canvas.drawRect(MARGIN_LEFT, y - 12f, tableRight, y + 10f, headerBgPaint)
-                canvas.drawText("#", colX[0] + 4f, y + 4f, headerPaint)
-                canvas.drawText("Tienda", colX[1] + 4f, y + 4f, headerPaint)
-                canvas.drawText("Ent.E", colX[2] + 4f, y + 4f, headerPaint)
-                canvas.drawText("Ent.D", colX[3] + 4f, y + 4f, headerPaint)
-                canvas.drawText("Vnd.E", colX[4] + 4f, y + 4f, headerPaint)
-                canvas.drawText("Vnd.D", colX[5] + 4f, y + 4f, headerPaint)
-                canvas.drawText("Cobrado", colX[6] + 4f, y + 4f, headerPaint)
-                canvas.drawText("Fecha", colX[7] + 4f, y + 4f, headerPaint)
-                y += 14f
+                canvas.drawRect(MARGIN_LEFT, y - 14f, tableRight, y + 14f, headerBgPaint)
+                canvas.drawText("#", colMids[0], y + 3f, headerCenterPaint)
+                canvas.drawText("Tienda", colMids[1], y + 3f, headerCenterPaint)
+                canvas.drawText("Ent.E", colMids[2], y + 3f, headerCenterPaint)
+                canvas.drawText("Ent.D", colMids[3], y + 3f, headerCenterPaint)
+                canvas.drawText("Vnd.E", colMids[4], y + 3f, headerCenterPaint)
+                canvas.drawText("Vnd.D", colMids[5], y + 3f, headerCenterPaint)
+                canvas.drawText("T.Entreg", colMids[6], y + 3f, headerCenterPaint)
+                canvas.drawText("Cobrado", colMids[7], y + 3f, headerCenterPaint)
+                canvas.drawText("Deuda", colMids[8], y + 3f, headerCenterPaint)
+                canvas.drawText("Novedad", colMids[9], y + 3f, headerCenterPaint)
+                y += 18f
             }
 
             // --- Table rows ---
@@ -205,30 +254,43 @@ class PdfExporter {
                     canvas.drawRect(MARGIN_LEFT, y - 10f, tableRight, y + 8f, altRowPaint)
                 }
 
-                val rowPaint = cellPaint
-                canvas.drawText("${index + 1}", colX[0] + 4f, y + 2f, rowPaint)
+                canvas.drawText("${index + 1}", colMids[0], y + 2f, cellCenterPaint)
 
                 // Truncate store name if too long
-                val maxNameWidth = colX[2] - colX[1] - 8f
+                val maxNameWidth = colStarts[2] - colStarts[1] - 8f
                 var displayName = store.name
-                while (rowPaint.measureText(displayName) > maxNameWidth && displayName.length > 3) {
+                while (cellPaint.measureText(displayName) > maxNameWidth && displayName.length > 3) {
                     displayName = displayName.dropLast(1)
                 }
                 if (displayName != store.name) displayName += "…"
-                canvas.drawText(displayName, colX[1] + 4f, y + 2f, rowPaint)
+                canvas.drawText(displayName, colStarts[1] + 4f, y + 2f, cellPaint)
 
-                canvas.drawText("${store.deliveredEmpanadas}", colX[2] + 4f, y + 2f, rowPaint)
-                canvas.drawText("${store.deliveredDeditos}", colX[3] + 4f, y + 2f, rowPaint)
-                canvas.drawText("${store.soldEmpanadas}", colX[4] + 4f, y + 2f, rowPaint)
-                canvas.drawText("${store.soldDeditos}", colX[5] + 4f, y + 2f, rowPaint)
+                canvas.drawText("${store.deliveredEmpanadas}", colMids[2], y + 2f, cellCenterPaint)
+                canvas.drawText("${store.deliveredDeditos}", colMids[3], y + 2f, cellCenterPaint)
+                canvas.drawText("${store.soldEmpanadas}", colMids[4], y + 2f, cellCenterPaint)
+                canvas.drawText("${store.soldDeditos}", colMids[5], y + 2f, cellCenterPaint)
+                canvas.drawText(
+                    "\$${currencyFormat.format(store.deliveredValue)}",
+                    colMids[6], y + 2f, cellCenterBoldPaint
+                )
                 canvas.drawText(
                     "\$${currencyFormat.format(store.collectedValue)}",
-                    colX[6] + 4f,
-                    y + 2f,
-                    cellPaintBold
+                    colMids[7], y + 2f, cellCenterBoldPaint
                 )
-                val dateText = store.collectionDate ?: "—"
-                canvas.drawText(dateText, colX[7] + 4f, y + 2f, rowPaint)
+                canvas.drawText(
+                    if (store.pendingDebtTotal > 0) "\$${currencyFormat.format(store.pendingDebtTotal)}" else "",
+                    colMids[8], y + 2f, cellCenterBoldPaint
+                )
+
+                // Novedad / Observaciones
+                val observations = store.observations ?: ""
+                val maxObsWidth = tableRight - colStarts[9] - 8f
+                var displayObs = observations
+                while (cellPaint.measureText(displayObs) > maxObsWidth && displayObs.length > 3) {
+                    displayObs = displayObs.dropLast(1)
+                }
+                if (displayObs != observations) displayObs += ".."
+                canvas.drawText(displayObs, colStarts[9] + 4f, y + 2f, cellPaint)
 
                 y += STORE_ROW_HEIGHT
             }
@@ -251,12 +313,12 @@ class PdfExporter {
                 strokeWidth = 1.5f
             }
             val boxTop = y - 4f
-            val boxBottom = y + 76f
+            val boxBottom = y + 96f
             canvas.drawRect(MARGIN_LEFT, boxTop, tableRight, boxBottom, totalsBoxPaint)
             canvas.drawRect(MARGIN_LEFT, boxTop, tableRight, boxBottom, totalsBoxBorderPaint)
 
             y += 14f
-            canvas.drawText("📊 Totales de Ruta", MARGIN_LEFT + 12f, y, totalLabelPaint)
+            canvas.drawText("Totales de Ruta", MARGIN_LEFT + 12f, y, totalLabelPaint)
             y += 20f
             canvas.drawText(
                 "Empanadas vendidas: ${summary.totalSoldEmpanadas}",
@@ -276,14 +338,171 @@ class PdfExporter {
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 color = Color.rgb(27, 94, 32)
             }
+            val totalDeliveredValueAll = summary.stores.sumOf { it.deliveredValue }
             canvas.drawText(
-                "💰 Total cobrado: \$${currencyFormat.format(summary.totalCollectedMoney)}",
+                "Total entregado: \$${currencyFormat.format(totalDeliveredValueAll)}",
+                MARGIN_LEFT + 12f,
+                y,
+                totalValuePaint
+            )
+            y += 20f
+            canvas.drawText(
+                "Total cobrado: \$${currencyFormat.format(summary.totalCollectedMoney)}",
                 MARGIN_LEFT + 12f,
                 y,
                 totalMoneyPaint
             )
 
-            // Draw page number on last page
+            // Draw page number on totals page
+            canvas.drawText(
+                "Página $pageNumber",
+                PAGE_WIDTH / 2f,
+                (PAGE_HEIGHT - 20f),
+                pageNumPaint
+            )
+
+            // === VISUAL STATISTICS PAGE ===
+            newPage()
+
+            val chartTitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = 15f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                color = Color.rgb(58, 58, 58) // Graphite
+            }
+            val chartSubPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = 10f
+                color = Color.rgb(90, 90, 90)
+            }
+            val chartLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = 8f
+                color = Color.rgb(90, 90, 90)
+            }
+            val chartValuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = 9f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                color = Color.rgb(58, 58, 58)
+            }
+
+            // ── Bar chart title ──
+            canvas.drawText("Estadísticas Visuales", MARGIN_LEFT, y, chartTitlePaint)
+            y += 10f
+            canvas.drawLine(MARGIN_LEFT, y, tableRight, y, linePaint)
+            y += 20f
+
+            canvas.drawText("Cobrado por tienda", MARGIN_LEFT, y, chartTitlePaint.apply { textSize = 13f })
+            y += 16f
+
+            // ── Horizontal bar chart ──
+            val maxCollected = summary.stores.maxOfOrNull { it.collectedValue } ?: 1
+            val barMaxWidth = USABLE_WIDTH - 140f  // space for labels and values
+            val barHeight = 14f
+            val barSpacing = 22f
+            val barFillPaint = Paint().apply {
+                color = Color.rgb(168, 201, 165) // Sage
+                style = Paint.Style.FILL
+            }
+            val barBgPaint = Paint().apply {
+                color = Color.rgb(224, 224, 224) // SoftBorder
+                style = Paint.Style.FILL
+            }
+
+            summary.stores.forEach { store ->
+                ensureSpace(barSpacing + 10f)
+                // Store name (truncated)
+                var displayName = store.name
+                while (chartLabelPaint.measureText(displayName) > 80f && displayName.length > 3) {
+                    displayName = displayName.dropLast(1)
+                }
+                if (displayName != store.name) displayName += "…"
+                canvas.drawText(displayName, MARGIN_LEFT, y + barHeight / 2 + 3f, chartLabelPaint)
+
+                // Background bar
+                val barLeft = MARGIN_LEFT + 90f
+                canvas.drawRect(barLeft, y, barLeft + barMaxWidth, y + barHeight, barBgPaint)
+
+                // Value bar
+                val fraction = if (maxCollected > 0) store.collectedValue.toFloat() / maxCollected else 0f
+                val barWidth = barMaxWidth * fraction
+                if (barWidth > 0) {
+                    canvas.drawRect(barLeft, y, barLeft + barWidth, y + barHeight, barFillPaint)
+                }
+
+                // Value text
+                canvas.drawText(
+                    "\$${currencyFormat.format(store.collectedValue)}",
+                    barLeft + barMaxWidth + 6f, y + barHeight / 2 + 3f, chartValuePaint
+                )
+                y += barSpacing
+            }
+            y += 10f
+
+            // ── Progress donuts section ──
+            ensureSpace(140f)
+            canvas.drawText("Progreso del Día", MARGIN_LEFT, y, chartTitlePaint.apply { textSize = 13f })
+            y += 20f
+
+            val donutRadius = 40f
+            val donutStroke = 10f
+            val donutPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = donutStroke
+                strokeCap = Paint.Cap.ROUND
+            }
+
+            // Donut 1 — Cobro
+            val totalCount = summary.stores.size
+            val collectedCount = summary.stores.count { it.isCollected }
+            val collFraction = if (totalCount > 0) collectedCount.toFloat() / totalCount else 0f
+            val donut1CenterX = MARGIN_LEFT + 150f
+            val donut1CenterY = y + donutRadius
+
+            donutPaint.color = Color.rgb(224, 224, 224)
+            canvas.drawArc(
+                donut1CenterX - donutRadius, donut1CenterY - donutRadius,
+                donut1CenterX + donutRadius, donut1CenterY + donutRadius,
+                0f, 360f, false, donutPaint
+            )
+            donutPaint.color = Color.rgb(157, 188, 198) // SkyBlue
+            canvas.drawArc(
+                donut1CenterX - donutRadius, donut1CenterY - donutRadius,
+                donut1CenterX + donutRadius, donut1CenterY + donutRadius,
+                -90f, 360f * collFraction, false, donutPaint
+            )
+            val donutCenterPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = 14f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                color = Color.rgb(58, 58, 58)
+                textAlign = Paint.Align.CENTER
+            }
+            canvas.drawText("${(collFraction * 100).toInt()}%", donut1CenterX, donut1CenterY + 5f, donutCenterPaint)
+            canvas.drawText("Cobro", donut1CenterX, donut1CenterY + donutRadius + 24f, chartSubPaint.apply { textAlign = Paint.Align.CENTER })
+            canvas.drawText("$collectedCount/$totalCount tiendas", donut1CenterX, donut1CenterY + donutRadius + 36f, chartLabelPaint.apply { textAlign = Paint.Align.CENTER })
+
+            // Donut 2 — Dinero cobrado vs entregado
+            val totalDeliveredValue = summary.stores.sumOf {
+                it.deliveredEmpanadas * EMPANADA_PRICE + it.deliveredDeditos * DEDITO_PRICE
+            }
+            val moneyFraction = if (totalDeliveredValue > 0) summary.totalCollectedMoney.toFloat() / totalDeliveredValue else 0f
+            val donut2CenterX = MARGIN_LEFT + 350f
+            val donut2CenterY = y + donutRadius
+
+            donutPaint.color = Color.rgb(224, 224, 224)
+            canvas.drawArc(
+                donut2CenterX - donutRadius, donut2CenterY - donutRadius,
+                donut2CenterX + donutRadius, donut2CenterY + donutRadius,
+                0f, 360f, false, donutPaint
+            )
+            donutPaint.color = Color.rgb(168, 201, 165) // Sage
+            canvas.drawArc(
+                donut2CenterX - donutRadius, donut2CenterY - donutRadius,
+                donut2CenterX + donutRadius, donut2CenterY + donutRadius,
+                -90f, 360f * moneyFraction.coerceIn(0f, 1f), false, donutPaint
+            )
+            canvas.drawText("${(moneyFraction * 100).toInt()}%", donut2CenterX, donut2CenterY + 5f, donutCenterPaint)
+            canvas.drawText("Recaudo", donut2CenterX, donut2CenterY + donutRadius + 24f, chartSubPaint)
+            canvas.drawText("\$${currencyFormat.format(summary.totalCollectedMoney)}", donut2CenterX, donut2CenterY + donutRadius + 36f, chartLabelPaint)
+
+            // Draw page number on chart page
             canvas.drawText(
                 "Página $pageNumber",
                 PAGE_WIDTH / 2f,
@@ -293,16 +512,26 @@ class PdfExporter {
             document.finishPage(currentPage)
 
             // Save the document
-            val fileFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+            val fileFormat = SimpleDateFormat("MMMM-dd-yyyy_HH-mm", Locale.getDefault())
             val fileName =
-                "resumen_${route.name.replace(" ", "_")}_${fileFormat.format(Date())}.pdf"
+                "resumen_${route.name.replace(" ", "_")}_${fileFormat.format(Date()).replaceFirstChar { it.uppercase() }}.pdf"
+
+            // Capturar bytes del PDF para subir a Drive
+            val byteStream = ByteArrayOutputStream()
+            document.writeTo(byteStream)
+            val pdfBytes = byteStream.toByteArray()
+
             val destination = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                saveToDownloadsWithMediaStore(context, fileName) { out -> document.writeTo(out) }
+                saveToDownloadsWithMediaStore(context, fileName) { out -> out.write(pdfBytes) }
             } else {
-                saveToDownloadsLegacy(context, fileName) { out -> document.writeTo(out) }
+                saveToDownloadsLegacy(context, fileName) { out -> out.write(pdfBytes) }
             }
             document.close()
-            destination
+            PdfExportResult(
+                localPath = destination,
+                fileName = fileName,
+                pdfBytes = pdfBytes
+            )
         }
     }
 

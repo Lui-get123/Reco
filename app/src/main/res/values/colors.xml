@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="mint_primary">#FF8CD4C4</color>
-    <color name="mint_light">#FFD4F0EA</color>
-    <color name="lavender_primary">#FFCDB4DB</color>
-    <color name="lavender_light">#FFEDE3F2</color>
-    <color name="yellow_primary">#FFF5D680</color>
-    <color name="yellow_light">#FFFFF4D6</color>
-    <color name="light_background">#FFF8F9FC</color>
-    <color name="light_surface">#FFFFFFFF</color>
-    <color name="text_dark">#FF2D3142</color>
-    <color name="text_medium">#FF5A5E72</color>
+    <color name="sage">#FFA8C9A5</color>
+    <color name="sage_light">#FFD4E8D2</color>
+    <color name="mustard">#FFD4B87A</color>
+    <color name="mustard_light">#FFEADDBB</color>
+    <color name="sky_blue">#FF9DBCC6</color>
+    <color name="sky_blue_light">#FFCEDDE2</color>
+    <color name="graphite">#FF3A3A3A</color>
+    <color name="bone">#FFF8F9FA</color>
+    <color name="cream">#FFF0EDE0</color>
+    <color name="white_surface">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Alias retrocompatible -->
+    <color name="light_background">@color/bone</color>
 </resources>

@@ -51,12 +51,13 @@ class StoreRepository(private val dbHelper: AppDatabaseHelper) {
         val db = dbHelper.readableDatabase
         val cursor = db.rawQuery(
             """
-            SELECT id, name, route_id, delivered_empanadas, delivered_deditos,
-                   sold_empanadas, sold_deditos, is_collected, collection_date,
-                   is_delivered, delivery_date
-            FROM stores
-            WHERE route_id = ?
-            ORDER BY id
+            SELECT s.id, s.name, s.route_id, s.delivered_empanadas, s.delivered_deditos,
+                   s.sold_empanadas, s.sold_deditos, s.is_collected, s.collection_date,
+                   s.is_delivered, s.delivery_date, s.observations,
+                   s.pending_debt
+            FROM stores s
+            WHERE s.route_id = ?
+            ORDER BY s.id
             """.trimIndent(),
             arrayOf(routeId.toString())
         )
@@ -72,10 +73,12 @@ class StoreRepository(private val dbHelper: AppDatabaseHelper) {
                         deliveredDeditos = it.getInt(4),
                         soldEmpanadas = it.getInt(5),
                         soldDeditos = it.getInt(6),
-                        isCollected = it.getInt(7) == 1,
+                        collectedStatus = it.getInt(7),
                         collectionDate = it.getString(8),
                         isDelivered = it.getInt(9) == 1,
-                        deliveryDate = it.getString(10)
+                        deliveryDate = it.getString(10),
+                        observations = it.getString(11),
+                        pendingDebtTotal = it.getInt(12)
                     )
                 )
             }
@@ -97,6 +100,16 @@ class StoreRepository(private val dbHelper: AppDatabaseHelper) {
         val values = ContentValues().apply {
             put("delivered_empanadas", deliveredEmpanadas)
             put("delivered_deditos", deliveredDeditos)
+        }
+        db.update("stores", values, "id = ?", arrayOf(storeId.toString()))
+    }
+
+    fun updateStoreCollected(storeId: Int, collectedStatus: Int, date: String?, observations: String?) {
+        val db = dbHelper.writableDatabase
+        val values = ContentValues().apply {
+            put("is_collected", collectedStatus)
+            put("collection_date", date)
+            put("observations", observations)
         }
         db.update("stores", values, "id = ?", arrayOf(storeId.toString()))
     }
@@ -124,16 +137,16 @@ class StoreRepository(private val dbHelper: AppDatabaseHelper) {
     fun resetRouteStores(routeId: Int) {
         val db = dbHelper.writableDatabase
         val values = ContentValues().apply {
-            put("delivered_empanadas", 0)
-            put("delivered_deditos", 0)
             put("sold_empanadas", 0)
             put("sold_deditos", 0)
             put("is_collected", 0)
             putNull("collection_date")
             put("is_delivered", 0)
             putNull("delivery_date")
+            putNull("observations")
         }
         db.update("stores", values, "route_id = ?", arrayOf(routeId.toString()))
+        // Las deudas pendientes NO se borran al reiniciar la ruta
     }
 
     fun getRouteSummary(routeId: Int): RouteSummary {
@@ -142,7 +155,31 @@ class StoreRepository(private val dbHelper: AppDatabaseHelper) {
             stores = stores,
             totalSoldEmpanadas = stores.sumOf { it.soldEmpanadas },
             totalSoldDeditos = stores.sumOf { it.soldDeditos },
-            totalCollectedMoney = stores.sumOf { it.collectedValue }
+            totalCollectedMoney = stores.sumOf { it.collectedValue },
+            totalPendingDebt = stores.sumOf { it.pendingDebtTotal }
         )
     }
+
+    /* ───────────── Deudas Pendientes ───────────── */
+
+    fun addPendingDebt(storeId: Int, amount: Int, observations: String?) {
+        val db = dbHelper.writableDatabase
+        if (observations != null) {
+            db.execSQL(
+                "UPDATE stores SET pending_debt = pending_debt + ?, observations = ? WHERE id = ?",
+                arrayOf(amount, observations, storeId)
+            )
+        } else {
+            db.execSQL(
+                "UPDATE stores SET pending_debt = pending_debt + ? WHERE id = ?",
+                arrayOf(amount, storeId)
+            )
+        }
+    }
+
+    fun markAllDebtsAsPaid(storeId: Int) {
+        val db = dbHelper.writableDatabase
+        db.execSQL("UPDATE stores SET pending_debt = 0 WHERE id = ?", arrayOf(storeId))
+    }
 }
+

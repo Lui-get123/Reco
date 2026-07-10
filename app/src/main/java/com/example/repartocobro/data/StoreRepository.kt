@@ -235,27 +235,26 @@ class StoreRepository(private val dbHelper: AppDatabaseHelper) {
         db.delete("products", "id = ?", arrayOf(id.toString()))
     }
 
-    fun addRoute(name: String, collectorId: Int) {
+    fun addCollector(name: String) {
         val db = dbHelper.writableDatabase
-        // Generate new ID (or rely on AUTOINCREMENT if we changed it, but it's not AUTOINCREMENT in the schema we wrote. Wait, routes id is INTEGER PRIMARY KEY, which acts as alias for rowid).
         val cv = ContentValues().apply {
             put("name", name)
+        }
+        val collectorId = db.insert("collectors", null, cv).toInt()
+        
+        // Automáticamente crearle una ruta
+        val routeCv = ContentValues().apply {
+            put("name", "Ruta de $name")
             put("collector_id", collectorId)
         }
-        db.insert("routes", null, cv)
+        db.insert("routes", null, routeCv)
     }
 
-    fun updateRoute(id: Int, name: String) {
+    fun deleteCollector(id: Int) {
         val db = dbHelper.writableDatabase
-        val cv = ContentValues().apply {
-            put("name", name)
-        }
-        db.update("routes", cv, "id = ?", arrayOf(id.toString()))
-    }
-
-    fun deleteRoute(id: Int) {
-        val db = dbHelper.writableDatabase
-        db.delete("routes", "id = ?", arrayOf(id.toString()))
+        // Also delete the route associated
+        db.delete("routes", "collector_id = ?", arrayOf(id.toString()))
+        db.delete("collectors", "id = ?", arrayOf(id.toString()))
     }
 
     fun addStore(name: String, routeId: Int) {

@@ -125,19 +125,21 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun addRoute(name: String, collectorId: Int) {
+    fun addCollector(name: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.addRoute(name, collectorId)
+            repository.addCollector(name)
             loadAdminData()
-            _uiState.update { it.copy(message = "Ruta agregada") }
+            loadCollectors() // Update collectors list
+            _uiState.update { it.copy(message = "Cobrador agregado") }
         }
     }
 
-    fun deleteRoute(id: Int) {
+    fun deleteCollector(id: Int) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.deleteRoute(id)
+            repository.deleteCollector(id)
             loadAdminData()
-            _uiState.update { it.copy(message = "Ruta eliminada") }
+            loadCollectors() // Update collectors list
+            _uiState.update { it.copy(message = "Cobrador eliminado") }
         }
     }
 

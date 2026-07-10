@@ -66,8 +66,8 @@ class MainActivity : ComponentActivity() {
                     onAcceptTerms = viewModel::acceptTerms,
                     onAddProduct = viewModel::addProduct,
                     onDeleteProduct = viewModel::deleteProduct,
-                    onAddRoute = viewModel::addRoute,
-                    onDeleteRoute = viewModel::deleteRoute,
+                    onAddCollector = viewModel::addCollector,
+                    onDeleteCollector = viewModel::deleteCollector,
                     onAddStore = viewModel::addStore,
                     onDeleteStore = viewModel::deleteStore
                 )

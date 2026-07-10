@@ -28,8 +28,8 @@ fun AppScreen(
     // Admin CRUD
     onAddProduct: (String, Int) -> Unit = { _, _ -> },
     onDeleteProduct: (Int) -> Unit = {},
-    onAddRoute: (String, Int) -> Unit = { _, _ -> },
-    onDeleteRoute: (Int) -> Unit = {},
+    onAddCollector: (String) -> Unit = { _ -> },
+    onDeleteCollector: (Int) -> Unit = {},
     onAddStore: (String, Int) -> Unit = { _, _ -> },
     onDeleteStore: (Int) -> Unit = {}
 ) {
@@ -40,7 +40,7 @@ fun AppScreen(
             if (!state.licenseStatus.isActive) {
                 LicenseLockScreen(state.licenseStatus, state.isValidatingLicense, onRedeemCode)
             } else if (showAdminScreen) {
-                AdminScreen(state, onClose = { showAdminScreen = false }, onAddProduct, onDeleteProduct, onAddRoute, onDeleteRoute, onAddStore, onDeleteStore)
+                AdminScreen(state, onClose = { showAdminScreen = false }, onAddProduct, onDeleteProduct, onAddCollector, onDeleteCollector, onAddStore, onDeleteStore)
             } else if (state.selectedCollector == null) {
                 LoginContent(state, onLogin, onOpenAdmin = { showAdminScreen = true }, onToggleLicenseDialog, onAcceptTerms)
             } else {

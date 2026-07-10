@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario — Reco</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; color: #2d2d2d; line-height: 1.7; background: #f8f9fa; padding: 0; }
+        .page { max-width: 210mm; margin: 20px auto; background: white; padding: 50px 55px; box-shadow: 0 2px 20px rgba(0,0,0,0.08); }
+        @media print {
+            body { background: white; padding: 0; }
+            .page { max-width: 100%; margin: 0; padding: 40px 50px; box-shadow: none; }
+            .no-print { display: none !important; }
+        }
+        .header { text-align: center; border-bottom: 3px solid #2196F3; padding-bottom: 25px; margin-bottom: 30px; }
+        .header .logo-text { font-size: 42px; font-weight: 800; color: #1976D2; letter-spacing: 3px; }
+        .header .subtitle { font-size: 14px; font-weight: 500; color: #666; letter-spacing: 4px; text-transform: uppercase; margin-top: 4px; }
+        .header h1 { font-size: 24px; font-weight: 700; color: #333; margin-top: 20px; }
+        .section { margin-bottom: 24px; page-break-inside: avoid; }
+        .section-title { font-size: 16px; font-weight: 700; color: #1976D2; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1.5px solid #E3F2FD; }
+        .section-subtitle { font-size: 14px; font-weight: 600; color: #333; margin-top: 12px; margin-bottom: 4px; }
+        .section-body { font-size: 13px; color: #444; text-align: justify; }
+        .section-body p { margin-bottom: 8px; }
+        ul, ol { padding-left: 20px; margin: 6px 0; }
+        ul li, ol li { font-size: 13px; color: #444; margin-bottom: 4px; }
+        .info-box { background: #E3F2FD; border-left: 4px solid #2196F3; padding: 12px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; font-size: 12.5px; color: #1565C0; }
+        .print-btn { position: fixed; bottom: 30px; right: 30px; background: #1976D2; color: white; border: none; padding: 14px 28px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(25,118,210,0.3); transition: all 0.3s; z-index: 100; }
+        .print-btn:hover { background: #1565C0; transform: translateY(-2px); }
+        hr { border: none; border-top: 1px solid #eee; margin: 25px 0; }
+    </style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">📄 Guardar como PDF</button>
+
+<div class="page">
+    <div class="header">
+        <div class="logo-text">Reco</div>
+        <div class="subtitle">Reparto & Cobro</div>
+        <h1>Manual de Usuario</h1>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Bienvenida</div>
+        <div class="section-body">
+            <p>Bienvenido a <strong>Reco</strong>, tu herramienta definitiva para gestionar rutas de reparto, ventas, fiados (deudas) y cobros de tu negocio.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Primeros Pasos: Configuración Inicial</div>
+        <div class="section-body">
+            <p>Para empezar a usar la aplicación, debes registrar la información básica desde el panel de <strong>Administración</strong>.</p>
+            <ol>
+                <li>Abre la aplicación y pulsa el botón de <strong>⚙️ Configuración/Admin</strong> en la esquina inferior derecha de la pantalla principal.</li>
+                <li>Ingresa al panel de configuración.</li>
+            </ol>
+
+            <div class="section-subtitle">1. Creación de Cobradores (Perfiles)</div>
+            <ul>
+                <li>Ve a la pestaña <strong>Cobradores</strong>.</li>
+                <li>Añade a las personas que trabajarán repartiendo y cobrando. <em>(La aplicación creará automáticamente una ruta interna para cada cobrador)</em>.</li>
+            </ul>
+
+            <div class="section-subtitle">2. Creación de Tiendas (Clientes)</div>
+            <ul>
+                <li>Ve a la pestaña <strong>Tiendas</strong>.</li>
+                <li>Registra los nombres de las tiendas a las que les repartes.</li>
+                <li>Asigna cada tienda a uno de los <strong>Cobradores</strong> que creaste en el paso anterior.</li>
+            </ul>
+            <div class="info-box"><strong>Nota:</strong> No podrás crear tiendas si antes no has creado al menos un cobrador.</div>
+
+            <div class="section-subtitle">3. Creación de Productos</div>
+            <ul>
+                <li>Ve a la pestaña <strong>Productos</strong>.</li>
+                <li>Agrega los productos que vendes (ej. Empanadas, Deditos, Arepas).</li>
+                <li>Ingresa el <strong>Precio Base</strong> de cada producto usando el teclado numérico.</li>
+            </ul>
+            <div class="info-box"><strong>Nota:</strong> No podrás crear productos si antes no has creado al menos una tienda.</div>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="section">
+        <div class="section-title">Día a Día: Operación de la Ruta</div>
+        <div class="section-body">
+            <p>Una vez configurado todo, vuelve a la pantalla inicial. ¡Estás listo para trabajar!</p>
+            <ol>
+                <li><strong>Seleccionar Perfil:</strong> Toca sobre tu nombre de cobrador en la lista.</li>
+                <li>Si es tu primera vez, deberás <strong>Aceptar los Términos y Condiciones</strong> marcando la casilla correspondiente.</li>
+            </ol>
+
+            <div class="section-subtitle">Gestión de Tiendas</div>
+            <p>Al entrar con tu perfil, verás la lista de tiendas que tienes asignadas.</p>
+            <ul>
+                <li><strong>Reparto (Entregas):</strong> Al iniciar el día, visita cada tienda y anota cuántos productos de cada tipo estás dejando. Al terminar, la tienda quedará marcada como "Repartida".</li>
+                <li><strong>Cobro (Ventas y Deudas):</strong> Al final del día (o cuando pases a cobrar), abre la tienda nuevamente.
+                    <ul>
+                        <li>Anota cuántos productos se <strong>Vendieron</strong> realmente.</li>
+                        <li>La aplicación calculará automáticamente cuánto dinero es en total.</li>
+                        <li>Si te pagan completo, simplemente guárdalo. La tienda se marcará como "Cobrada".</li>
+                        <li>Si te quedan debiendo dinero, anota el abono en el apartado correspondiente y se generará una <strong>Deuda (Fiado)</strong>.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <div class="section-subtitle">Cobro de Deudas Atrasadas</div>
+            <p>Si una tienda tiene una deuda de días anteriores, verás un botón rojo de <strong>"Cobrar Deuda"</strong> al abrir el perfil de esa tienda. Al pulsarlo, podrás descontar del saldo lo que el cliente te esté pagando ese día.</p>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="section">
+        <div class="section-title">Reportes y Estadísticas</div>
+        <div class="section-body">
+            <ul>
+                <li><strong>Panel Superior:</strong> A medida que trabajes, verás en la parte superior el progreso de tu ruta (cuántas tiendas faltan por cobrar), cuánto dinero en efectivo debes tener y cuánto hay en deudas.</li>
+                <li><strong>Exportar a PDF:</strong> Al terminar tu jornada, pulsa el botón rojo <strong>"Exportar PDF"</strong>. Esto creará un documento profesional con todas las ventas, entregas, ganancias y deudas del día. El archivo se guardará automáticamente en la carpeta de <em>Descargas</em> de tu teléfono.</li>
+                <li><strong>Respaldo en Google Drive (Opcional):</strong> Si inicias sesión con Google desde la aplicación, todos tus PDFs se subirán automáticamente a una carpeta llamada <code>Reco_Reportes</code> en tu Google Drive para que nunca los pierdas.</li>
+            </ul>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="section">
+        <div class="section-title">Reiniciar Ruta</div>
+        <div class="section-body">
+            <p>Una vez hayas generado tu reporte PDF al finalizar el día, pulsa el botón <strong>"Reiniciar Ruta"</strong>.</p>
+            <p>Esto limpiará todas las entregas y ventas del día para que puedas empezar fresco a la mañana siguiente. <strong>¡Las deudas (fiados) no se borran!</strong> Se mantendrán guardadas de forma segura hasta que el cliente las pague.</p>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

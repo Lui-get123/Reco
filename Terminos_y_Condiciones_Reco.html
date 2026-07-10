@@ -274,8 +274,9 @@
         <div class="section-body">
             <p><strong>Reco</strong> es una aplicación móvil para dispositivos Android diseñada como herramienta interna de gestión para el seguimiento de rutas de reparto y cobranza de productos alimenticios. La Aplicación permite:</p>
             <ul>
-                <li><strong>Gestión de Reparto:</strong> Registro de cantidades entregadas de productos (empanadas y deditos) en las tiendas asignadas a cada ruta.</li>
-                <li><strong>Gestión de Cobro:</strong> Registro de cantidades vendidas, cálculo automático de montos y marcado de tiendas como cobradas.</li>
+                <li><strong>Gestión de Reparto:</strong> Registro de cantidades entregadas de productos configurables en las tiendas asignadas a cada cobrador.</li>
+                <li><strong>Gestión de Cobro:</strong> Registro de cantidades vendidas, cálculo automático de montos y marcado de tiendas como cobradas o con deuda.</li>
+                <li><strong>Panel de Administración:</strong> Gestión dinámica de productos, precios bases, cobradores y tiendas.</li>
                 <li><strong>Exportación de Reportes:</strong> Generación de documentos PDF con el resumen detallado de cobranza por ruta.</li>
                 <li><strong>Control de Acceso:</strong> Sistema de licenciamiento mensual mediante códigos de activación.</li>
             </ul>
@@ -322,6 +323,7 @@
                 <div class="col">
                     <p><strong>✅ El Usuario PUEDE:</strong></p>
                     <ul>
+                        <li>Administrar dinámica de productos, cobradores y tiendas</li>
                         <li>Seleccionar su perfil de cobrador/repartidor</li>
                         <li>Registrar cantidades entregadas por tienda</li>
                         <li>Registrar cantidades vendidas por tienda</li>
@@ -336,15 +338,10 @@
                 <div class="col">
                     <p><strong>❌ El Usuario NO PUEDE:</strong></p>
                     <ul>
-                        <li>Crear, eliminar o renombrar tiendas</li>
-                        <li>Crear, eliminar o modificar rutas</li>
-                        <li>Crear o eliminar perfiles de cobrador</li>
-                        <li>Modificar los precios de productos</li>
-                        <li>Editar tiendas ya marcadas como cobradas</li>
+                        <li>Editar tiendas ya marcadas como cobradas en el día actual</li>
                         <li>Registrar ventas superiores a las entregas</li>
                         <li>Transferir su licencia a terceros</li>
-                        <li>Exportar o respaldar la base de datos</li>
-                        <li>Acceder a funciones administrativas</li>
+                        <li>Exportar o respaldar la base de datos en crudo</li>
                     </ul>
                 </div>
             </div>
@@ -399,20 +396,11 @@
     <div class="section">
         <div class="section-title">7. Productos y Precios Registrados</div>
         <div class="section-body">
-            <p>La Aplicación gestiona el registro de los siguientes productos con precios unitarios fijos:</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th>Precio Unitario</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td>Empanada</td><td>$1.000 COP</td></tr>
-                    <tr><td>Dedito</td><td>$900 COP</td></tr>
-                </tbody>
-            </table>
-            <p>Estos precios están configurados internamente en la Aplicación y <strong>no pueden ser modificados</strong> por el Usuario. Cualquier ajuste de precios requiere una actualización de la Aplicación por parte del desarrollador.</p>
+            <p>La Aplicación gestiona productos con precios unitarios bases configurables por el Usuario:</p>
+            <ul>
+                <li>El Usuario, desde la sección de Administración, puede crear los productos que desee y establecerles el precio unitario correspondiente.</li>
+            </ul>
+            <p>Estos precios y productos definidos se añadirán dinámicamente a todos los cálculos y reportes de la Aplicación. <strong>Los montos de cobro, deuda y reportes PDF se calculan automáticamente con base en los valores que el Usuario haya configurado.</strong></p>
         </div>
     </div>
 
